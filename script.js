@@ -76,9 +76,9 @@ function init() {
 
     scene = new THREE.Scene();
 
-    camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 100000);
-    camera.position.set(-440, 380, 800);
-    camera.lookAt(new THREE.Vector3(0 ,0 ,0 ))
+    camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.01, 20);
+    // camera.position.set(-440, 380, 800);
+    // camera.lookAt(new THREE.Vector3(0 ,0 ,0 ))
     settings.camera = camera;
     settings.cameraPosition = camera.position;
 
@@ -95,11 +95,15 @@ function init() {
     document.body.appendChild ( renderer.domElement );
     document.body.appendChild( ARButton.createButton( renderer ));
 
-    initLight();
-    scene.add(lightMesh);
-    initSimulator();
-    initParticles();
-    scene.add(partcleMesh);
+    // initLight();
+    // scene.add(lightMesh);
+    // initSimulator();
+    // initParticles();
+    // scene.add(partcleMesh);
+    
+    const defaultLight = new THREE.HemisphereLight( 0xffffff, 0xbbbbff, 1 );
+    defaultLight.position.set( 0.5, 1, 0.25 );
+    scene.add( defaultLight );
 
     const geometry = new THREE.BoxGeometry( 1, 1, 1 );
     const material = new THREE.MeshStandardMaterial( { 
@@ -443,8 +447,8 @@ function render(dt) {
     initAnimation = Math.min(initAnimation + dt * 0.00025, 1);
     // lightUpdate(dt, camera);
 
-    updateSimulator(dt);
-    updateParticles(dt);
+    // updateSimulator(dt);
+    // updateParticles(dt);
     renderer.render(scene, camera);
 }
 
