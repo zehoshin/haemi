@@ -80,6 +80,8 @@ function init() {
     scene = new THREE.Scene();
 
     camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 100000);
+    // camera.position.set(-440, 380, 800);
+    // camera.lookAt(new THREE.Vector3(0 ,0 ,0 ))
     settings.camera = camera;
     settings.cameraPosition = camera.position;
 
@@ -435,7 +437,6 @@ function animate() {
     controls.update();
     let newTime = Date.now();
     let dt = newTime - time;
-    render(dt);
     renderer.setAnimationLoop( render(dt) );
     time = newTime;
     requestAnimationFrame(animate);
