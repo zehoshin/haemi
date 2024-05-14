@@ -84,6 +84,7 @@ function init() {
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.shadowMap.enabled = true;
     renderer.setSize( window.innerWidth, window.innerHeight );
+    renderer.setPixelRatio( window.devicePixelRatio );
     renderer.xr.enabled = true;
 
     document.body.appendChild(renderer.domElement);
@@ -121,15 +122,7 @@ function init() {
     controls.update();
 
     // GUI
-
     const gui = new GUI();
-
-    const colorFormats = {
-        string: '#ffffff',
-        int: 0xffffff,
-        object: { r: 1, g: 1, b: 1 },
-        array: [ 1, 1, 1 ]
-    };
 
     settings.amount = query.amount;
 
@@ -438,11 +431,11 @@ function initLight() {
 
 //###########ANIMATION##############
 function animate() {
-    requestAnimationFrame( animate );
     controls.update();
     let newTime = Date.now();
-    renderer.setAnimationLoop( render(newTime - time, newTime) );
+    render(newTime - time, newTime);
     time = newTime;
+    requestAnimationFrame(animate);
 }
 
 function render(dt, newTime) {
@@ -454,11 +447,13 @@ function render(dt, newTime) {
     ray.origin.setFromMatrixPosition( camera.matrixWorld );
     ray.direction.set( settings.mouse.x, settings.mouse.y, 0.5 ).unproject( camera ).sub( ray.origin ).normalize();
     var distance = ray.origin.length() / Math.cos(Math.PI - ray.direction.angleTo(ray.origin));
-    ray.origin.add( ray.direction.multiplyScalar(distance * 1.0));
+    ray.origin.add( ray.direction.multiplyScalar(distance * 1.0) );
     updateSimulator(dt);
     updateParticles(dt);
     renderer.render(scene, camera);
 }
+
+renderer.setAnimationLoop(render);
 
 //#########EVENT LISTENER#############
 function onKeyUp(evt) {
