@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>three.js webgl - gpgpu - flocking</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+				margin: 0;
+				overflow: hidden;
+			}
+			canvas {
+				width: 100dvw;
+				height: 100dvh;
+			}
+		</style>
+	</head>
+	<body>
+		<script type="importmap">
+			{
+				"imports": {
+					"three": "./jsm/three.module.js",
+					"three/addons/": "./jsm/"
+				}
+			}
+		</script>
+		<script id="quadVert" type="x-shader/x-vertex">
+			precision highp float;
+
+			attribute vec3 position;
+
+			void main() {
+				gl_Position = vec4( position, 1.0 );
+			}
+
+		</script>
+		<script id="throughFrag" type="x-shader/x-fragment">
+			precision highp float;
+
+			uniform vec2 resolution;
+			uniform sampler2D texture;
+			
+			void main() {
+				vec2 uv = gl_FragCoord.xy / resolution.xy;
+				gl_FragColor = texture2D( texture, uv );
+			}
+
+		</script>
+		<script id="positionFrag" type="x-shader/x-fragment">
+			precision highp float;
+
+			uniform vec2 resolution;
+			uniform sampler2D texturePosition;
+			uniform sampler2D textureDefaultPosition;
+			uniform float time;
+			uniform float speed;
+			uniform float dieSpeed;
+			uniform float radius;
+			uniform float curlSize;
+			uniform float attraction;
+			uniform float initAnimation;
+			uniform vec3 mouse3d;
+			
+			vec4 mod289(vec4 x) {
+				    return x - floor(x * (1.0 / 289.0)) * 289.0;
+			}
+			
+			float mod289(float x) {
+				    return x - floor(x * (1.0 / 289.0)) * 289.0;
+			}
+			
+			vec4 permute(vec4 x) {
+				    return mod289(((x*34.0)+1.0)*x);
+			}
+			
+			float permute(float x) {
+				    return mod289(((x*34.0)+1.0)*x);
+			}
+			
+			vec4 taylorInvSqrt(vec4 r) {
+				    return 1.79284291400159 - 0.85373472095314 * r;
+			}
+			
+			float taylorInvSqrt(float r) {
+				    return 1.79284291400159 - 0.85373472095314 * r;
+			}
+			
+			vec4 grad4(float j, vec4 ip) {
+				    const vec4 ones = vec4(1.0, 1.0, 1.0, -1.0);
+				    vec4 p,s;
+				
+				    p.xyz = floor( fract (vec3(j) * ip.xyz) * 7.0) * ip.z - 1.0;
+				    p.w = 1.5 - dot(abs(p.xyz), ones.xyz);
+				    s = vec4(lessThan(p, vec4(0.0)));
+				    p.xyz = p.xyz + (s.xyz*2.0 - 1.0) * s.www;
+				
+				    return p;
+			}
+			
+			#define F4 0.309016994374947451
+			
+			vec4 simplexNoiseDerivatives (vec4 v) {
+				    const vec4  C = vec4( 0.138196601125011,0.276393202250021,0.414589803375032,-0.447213595499958);
+				
+				    vec4 i  = floor(v + dot(v, vec4(F4)) );
+				    vec4 x0 = v -   i + dot(i, C.xxxx);
+				
+				    vec4 i0;
+				    vec3 isX = step( x0.yzw, x0.xxx );
+				    vec3 isYZ = step( x0.zww, x0.yyz );
+				    i0.x = isX.x + isX.y + isX.z;
+				    i0.yzw = 1.0 - isX;
+				    i0.y += isYZ.x + isYZ.y;
+				    i0.zw += 1.0 - isYZ.xy;
+				    i0.z += isYZ.z;
+				    i0.w += 1.0 - isYZ.z;
+				
+				    vec4 i3 = clamp( i0, 0.0, 1.0 );
+				    vec4 i2 = clamp( i0-1.0, 0.0, 1.0 );
+				    vec4 i1 = clamp( i0-2.0, 0.0, 1.0 );
+				
+				    vec4 x1 = x0 - i1 + C.xxxx;
+				    vec4 x2 = x0 - i2 + C.yyyy;
+				    vec4 x3 = x0 - i3 + C.zzzz;
+				    vec4 x4 = x0 + C.wwww;
+				
+				    i = mod289(i);
+				    float j0 = permute( permute( permute( permute(i.w) + i.z) + i.y) + i.x);
+				    vec4 j1 = permute( permute( permute( permute (
+				             i.w + vec4(i1.w, i2.w, i3.w, 1.0 ))
+				           + i.z + vec4(i1.z, i2.z, i3.z, 1.0 ))
+				           + i.y + vec4(i1.y, i2.y, i3.y, 1.0 ))
+				           + i.x + vec4(i1.x, i2.x, i3.x, 1.0 ));
+				
+				    vec4 ip = vec4(1.0/294.0, 1.0/49.0, 1.0/7.0, 0.0) ;
+				
+				    vec4 p0 = grad4(j0,   ip);
+				    vec4 p1 = grad4(j1.x, ip);
+				    vec4 p2 = grad4(j1.y, ip);
+				    vec4 p3 = grad4(j1.z, ip);
+				    vec4 p4 = grad4(j1.w, ip);
+				
+				    vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2, p2), dot(p3,p3)));
+				    p0 *= norm.x;
+				    p1 *= norm.y;
+				    p2 *= norm.z;
+				    p3 *= norm.w;
+				    p4 *= taylorInvSqrt(dot(p4,p4));
+				
+				    vec3 values0 = vec3(dot(p0, x0), dot(p1, x1), dot(p2, x2)); //value of contributions from each corner at point
+				    vec2 values1 = vec2(dot(p3, x3), dot(p4, x4));
+				
+				    vec3 m0 = max(0.5 - vec3(dot(x0,x0), dot(x1,x1), dot(x2,x2)), 0.0); //(0.5 - x^2) where x is the distance
+				    vec2 m1 = max(0.5 - vec2(dot(x3,x3), dot(x4,x4)), 0.0);
+				
+				    vec3 temp0 = -6.0 * m0 * m0 * values0;
+				    vec2 temp1 = -6.0 * m1 * m1 * values1;
+				
+				    vec3 mmm0 = m0 * m0 * m0;
+				    vec2 mmm1 = m1 * m1 * m1;
+				
+				    float dx = temp0[0] * x0.x + temp0[1] * x1.x + temp0[2] * x2.x + temp1[0] * x3.x + temp1[1] * x4.x + mmm0[0] * p0.x + mmm0[1] * p1.x + mmm0[2] * p2.x + mmm1[0] * p3.x + mmm1[1] * p4.x;
+				    float dy = temp0[0] * x0.y + temp0[1] * x1.y + temp0[2] * x2.y + temp1[0] * x3.y + temp1[1] * x4.y + mmm0[0] * p0.y + mmm0[1] * p1.y + mmm0[2] * p2.y + mmm1[0] * p3.y + mmm1[1] * p4.y;
+				    float dz = temp0[0] * x0.z + temp0[1] * x1.z + temp0[2] * x2.z + temp1[0] * x3.z + temp1[1] * x4.z + mmm0[0] * p0.z + mmm0[1] * p1.z + mmm0[2] * p2.z + mmm1[0] * p3.z + mmm1[1] * p4.z;
+				    float dw = temp0[0] * x0.w + temp0[1] * x1.w + temp0[2] * x2.w + temp1[0] * x3.w + temp1[1] * x4.w + mmm0[0] * p0.w + mmm0[1] * p1.w + mmm0[2] * p2.w + mmm1[0] * p3.w + mmm1[1] * p4.w;
+				
+				    return vec4(dx, dy, dz, dw) * 49.0;
+			}
+			
+			vec3 curl( in vec3 p, in float noiseTime, in float persistence ) {
+				
+				    vec4 xNoisePotentialDerivatives = vec4(0.0);
+				    vec4 yNoisePotentialDerivatives = vec4(0.0);
+				    vec4 zNoisePotentialDerivatives = vec4(0.0);
+				
+				    for (int i = 0; i < 3; ++i) {
+				
+				        float twoPowI = pow(2.0, float(i));
+				        float scale = 0.5 * twoPowI * pow(persistence, float(i));
+				
+				        xNoisePotentialDerivatives += simplexNoiseDerivatives(vec4(p * twoPowI, noiseTime)) * scale;
+				        yNoisePotentialDerivatives += simplexNoiseDerivatives(vec4((p + vec3(123.4, 129845.6, -1239.1)) * twoPowI, noiseTime)) * scale;
+				        zNoisePotentialDerivatives += simplexNoiseDerivatives(vec4((p + vec3(-9519.0, 9051.0, -123.0)) * twoPowI, noiseTime)) * scale;
+			    }
+			
+			    return vec3(
+				        zNoisePotentialDerivatives[1] - yNoisePotentialDerivatives[2],
+			        xNoisePotentialDerivatives[2] - zNoisePotentialDerivatives[0],
+			        yNoisePotentialDerivatives[0] - xNoisePotentialDerivatives[1]
+			    );
+			
+			}
+			
+			void main() {
+				
+				    vec2 uv = gl_FragCoord.xy / resolution.xy;
+				
+				    vec4 positionInfo = texture2D( texturePosition, uv );
+				    vec3 position = mix(vec3(0.0, -200.0, 0.0), positionInfo.xyz, smoothstep(0.0, 0.3, initAnimation));
+				    float life = positionInfo.a - dieSpeed;
+				
+				    vec3 followPosition = mix(vec3(0.0, -(1.0 - initAnimation) * 200.0, 0.0), mouse3d, smoothstep(0.2, 0.7, initAnimation));
+				
+				    if(life < 0.0) {
+				        positionInfo = texture2D( textureDefaultPosition, uv );
+				        position = positionInfo.xyz * (1.0 + (1.0 - initAnimation)) * 0.4 * radius;
+				        position += followPosition;
+				        life = 0.5 + fract(positionInfo.w * 21.4131 + time);
+			    } else {
+				        vec3 delta = followPosition - position;
+				        position += delta * (0.005 + life * 0.01) * attraction * (1.0 - smoothstep(50.0, 350.0, length(delta))) *speed;
+				        position += curl(position * curlSize, time, 0.1 + (1.0 - life) * 0.1) *speed;
+			    }
+			
+			    gl_FragColor = vec4(position, life);
+			
+			}
+
+		</script>
+		<script id="particlesVert" type="x-shader/x-vertex">
+
+			uniform sampler2D texturePosition;
+
+			attribute float ranRotation;
+			varying float vRanRotation;
+
+			attribute vec3 ranColor1;
+			varying vec3 vRanColor1;
+			attribute vec3 ranColor2;
+			varying vec3 vRanColor2;
+
+			varying float vLife;
+			// chunk(shadowmap_pars_vertex);
+			
+			void main() {
+			
+				vec4 positionInfo = texture2D( texturePosition, position.xy );
+			
+				vec4 worldPosition = modelMatrix * vec4( positionInfo.xyz, 1.0 );
+				vec4 mvPosition = viewMatrix * worldPosition;
+			
+				// chunk(shadowmap_vertex);
+			
+				vLife = positionInfo.w;
+
+				vRanRotation = ranRotation; 
+				vRanColor1 = ranColor1;
+				vRanColor2 = ranColor2;
+
+				gl_PointSize = 6000.0 / length( mvPosition.xyz ) * smoothstep(0.0, 0.2, positionInfo.w);
+			
+				gl_Position = projectionMatrix * mvPosition;
+			
+			}
+			
+		</script>
+		<script id="particlesFrag" type="x-shader/x-fragment">
+
+			bool sameSide( vec3 p1, vec3 p2, vec3 a, vec3 b ) {
+				vec3 cp1 = cross(b-a, p1-a);
+				vec3 cp2 = cross(b-a, p2-a);
+				
+				return dot(cp1, cp2) >= 0.0;
+			}
+
+			bool pointInTriangle( vec3 p, vec3 a, vec3 b, vec3 c ) {
+				return sameSide(p, a, b, c) && sameSide(p, b, a, c) && sameSide(p, c, a, b);
+			}
+
+			bool inPath(vec2 p) {
+				vec3 a, b, c;
+				// Triangle 0
+				a = vec3(0.530746379261164, -0.4579235545180609, 0);    
+				b = vec3(0.4401539363935153, -0.6093854166965076, 0);   
+				c = vec3(-0.4623708508679993, -0.5086378393553819, 0);  
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 1
+				a = vec3(0.530746379261164, -0.4579235545180609, 0);    
+				b = vec3(-0.5092938418485341, -0.41986001187644084, 0); 
+				c = vec3(0.5809094040785057, -0.3636388563421298, 0);   
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 2
+				a = vec3(0.530746379261164, -0.4579235545180609, 0);
+				b = vec3(-0.4623708508679993, -0.5086378393553819, 0);
+				c = vec3(-0.5092938418485341, -0.41986001187644084, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 3
+				a = vec3(0.4401539363935153, -0.6093854166965076, 0);
+				b = vec3(0.3510642602618465, -0.7232879324802652, 0);
+				c = vec3(-0.30731413492897264, -0.7294888915171844, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 4
+				a = vec3(0.4401539363935153, -0.6093854166965076, 0);
+				b = vec3(-0.3480132488613638, -0.6879090711534674, 0);
+				c = vec3(-0.4236754259169149, -0.5801551303809749, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 5
+				a = vec3(0.4401539363935153, -0.6093854166965076, 0);
+				b = vec3(-0.4236754259169149, -0.5801551303809749, 0);
+				c = vec3(-0.4623708508679993, -0.5086378393553819, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 6
+				a = vec3(0.4401539363935153, -0.6093854166965076, 0);
+				b = vec3(-0.30731413492897264, -0.7294888915171844, 0);
+				c = vec3(-0.3480132488613638, -0.6879090711534674, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 7
+				a = vec3(0.3510642602618465, -0.7232879324802652, 0);
+				b = vec3(0.24970690012207952, -0.8139319408731684, 0);
+				c = vec3(-0.25805023280197664, -0.7733932530193455, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 8
+				a = vec3(0.3510642602618465, -0.7232879324802652, 0);
+				b = vec3(-0.25805023280197664, -0.7733932530193455, 0);
+				c = vec3(-0.30731413492897264, -0.7294888915171844, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 9
+				a = vec3(0.24970690012207952, -0.8139319408731684, 0);
+				b = vec3(0.1901245726916344, -0.8550010169867481, 0);
+				c = vec3(-0.25805023280197664, -0.7733932530193455, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 10
+				a = vec3(0.16407988993625125, -0.8756108570804171, 0);
+				b = vec3(0.12503414681359848, -0.9209164912688514, 0);
+				c = vec3(-0.09065380481957609, -0.9048706094103809, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 11
+				a = vec3(0.16407988993625125, -0.8756108570804171, 0);
+				b = vec3(-0.14215712404332662, -0.8687452757179985, 0);
+				c = vec3(0.1901245726916344, -0.8550010169867481, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 12
+				a = vec3(0.16407988993625125, -0.8756108570804171, 0);
+				b = vec3(-0.09065380481957609, -0.9048706094103809, 0);
+				c = vec3(-0.14215712404332662, -0.8687452757179985, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 13
+				a = vec3(0.12503414681359848, -0.9209164912688514, 0);
+				b = vec3(-0.05953114557725369, -0.9315766404896595, 0);
+				c = vec3(-0.09065380481957609, -0.9048706094103809, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 14
+				a = vec3(0.12503414681359848, -0.9209164912688514, 0);
+				b = vec3(0.11112946200377895, -0.9388154580348704, 0);
+				c = vec3(-0.05953114557725369, -0.9315766404896595, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 15
+				a = vec3(0.09441240981660257, -0.9601030164604525, 0);
+				b = vec3(0.06709004793547597, -0.9892228052218688, 0);
+				c = vec3(-0.017696771588869047, -0.9750426950271596, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 16
+				a = vec3(0.09441240981660257, -0.9601030164604525, 0);
+				b = vec3(-0.017696771588869047, -0.9750426950271596, 0);
+				c = vec3(0.11112946200377895, -0.9388154580348704, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 17
+				a = vec3(0.06709004793547597, -0.9892228052218688, 0);
+				b = vec3(0.04548654835516189, -0.999485163247859, 0);
+				c = vec3(0.03318203182902505, -1, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 18
+				a = vec3(0.06709004793547597, -0.9892228052218688, 0);
+				b = vec3(0.032756411620577575, -0.9999672599839655, 0);
+				c = vec3(0.030883682703408473, -0.9998232039134141, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 19
+				a = vec3(0.06709004793547597, -0.9892228052218688, 0);
+				b = vec3(0.030883682703408473, -0.9998232039134141, 0);
+				c = vec3(0.01286112237685968, -0.9952048154015585, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 20
+				a = vec3(0.06709004793547597, -0.9892228052218688, 0);
+				b = vec3(0.01286112237685968, -0.9952048154015585, 0);
+				c = vec3(-0.017696771588869047, -0.9750426950271596, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 21
+				a = vec3(0.06709004793547597, -0.9892228052218688, 0);
+				b = vec3(0.03318203182902505, -1, 0);
+				c = vec3(0.032756411620577575, -0.9999672599839655, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 22
+				a = vec3(0.030883682703408473, -0.9998232039134141, 0);
+				b = vec3(0.030458062494960848, -0.9997904638973796, 0);
+				c = vec3(0.01286112237685968, -0.9952048154015585, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 23
+				a = vec3(-0.017696771588869047, -0.9750426950271596, 0);
+				b = vec3(-0.05953114557725369, -0.9315766404896595, 0);
+				c = vec3(0.11112946200377895, -0.9388154580348704, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 24
+				a = vec3(-0.14215712404332662, -0.8687452757179985, 0);
+				b = vec3(-0.25805023280197664, -0.7733932530193455, 0);
+				c = vec3(0.1901245726916344, -0.8550010169867481, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 25
+				a = vec3(-0.5092938418485341, -0.41986001187644084, 0);
+				b = vec3(-0.5908999688151347, -0.24929598734270986, 0);
+				c = vec3(0.6442360127489625, -0.16194122512321507, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 26
+				a = vec3(-0.5092938418485341, -0.41986001187644084, 0);
+				b = vec3(0.6442360127489625, -0.16194122512321507, 0);
+				c = vec3(0.6081918129088157, -0.30165208167160684, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 27
+				a = vec3(-0.5092938418485341, -0.41986001187644084, 0);
+				b = vec3(0.6081918129088157, -0.30165208167160684, 0);
+				c = vec3(0.5809094040785057, -0.3636388563421298, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 28
+				a = vec3(-0.5908999688151347, -0.24929598734270986, 0);
+				b = vec3(-0.6343361480880036, -0.11970772987686074, 0);
+				c = vec3(0.658211395530906, -0.007529282874966237, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 29
+				a = vec3(-0.5908999688151347, -0.24929598734270986, 0);
+				b = vec3(0.658211395530906, -0.007529282874966237, 0);
+				c = vec3(0.6442360127489625, -0.16194122512321507, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 30
+				a = vec3(-0.6343361480880036, -0.11970772987686074, 0);
+				b = vec3(-0.6480198377895905, -0.05247774395097515, 0);
+				c = vec3(0.658211395530906, -0.007529282874966237, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 31
+				a = vec3(-0.6557943638471647, 0.013540042881235892, 0);
+				b = vec3(-0.658211395530906, 0.13736442052422482, 0);
+				c = vec3(0.6532683692975588, 0.1540453563812133, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 32
+				a = vec3(-0.6557943638471647, 0.013540042881235892, 0);
+				b = vec3(0.6532683692975588, 0.1540453563812133, 0);
+				c = vec3(-0.6480198377895905, -0.05247774395097515, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 33
+				a = vec3(-0.658211395530906, 0.13736442052422482, 0);
+				b = vec3(-0.6464749182829662, 0.2527615180399534, 0);
+				c = vec3(0.6532683692975588, 0.1540453563812133, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 34
+				a = vec3(-0.6464749182829662, 0.2527615180399534, 0);
+				b = vec3(-0.6246119540755795, 0.3627565129100023, 0);
+				c = vec3(0.6325573420918335, 0.315244303953398, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 35
+				a = vec3(-0.6464749182829662, 0.2527615180399534, 0);
+				b = vec3(0.6325573420918335, 0.315244303953398, 0);
+				c = vec3(0.6532683692975588, 0.1540453563812133, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 36
+				a = vec3(-0.6246119540755795, 0.3627565129100023, 0);
+				b = vec3(-0.6111414837284166, 0.41667358981589064, 0);
+				c = vec3(0.6325573420918335, 0.315244303953398, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 37
+				a = vec3(-0.5808700649029892, 0.5327729606755576, 0);
+				b = vec3(-0.5252603291681212, 0.694073606922549, 0);
+				c = vec3(-0.01320729689014862, 0.8883393568142, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 38
+				a = vec3(-0.5808700649029892, 0.5327729606755576, 0);
+				b = vec3(-0.01320729689014862, 0.8883393568142, 0);
+				c = vec3(-0.001810497308566056, 0.8845677069670345, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 39
+				a = vec3(-0.5808700649029892, 0.5327729606755576, 0);
+				b = vec3(-0.001810497308566056, 0.8845677069670345, 0);
+				c = vec3(-0.6111414837284166, 0.41667358981589064, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 40
+				a = vec3(-0.5252603291681212, 0.694073606922549, 0);
+				b = vec3(-0.4705566733770057, 0.7844761576971983, 0);
+				c = vec3(-0.4351311575273593, 0.8223354844888036, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 41
+				a = vec3(-0.5252603291681212, 0.694073606922549, 0);
+				b = vec3(-0.4351311575273593, 0.8223354844888036, 0);
+				c = vec3(-0.01320729689014862, 0.8883393568142, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 42
+				a = vec3(-0.4270574695732706, 0.8296659740789107, 0);
+				b = vec3(-0.4109100936650933, 0.8444055292976079, 0);
+				c = vec3(-0.01320729689014862, 0.8883393568142, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 43
+				a = vec3(-0.4270574695732706, 0.8296659740789107, 0);
+				b = vec3(-0.01320729689014862, 0.8883393568142, 0);
+				c = vec3(-0.4351311575273593, 0.8223354844888036, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 44
+				a = vec3(-0.4109100936650933, 0.8444055292976079, 0);
+				b = vec3(-0.40307213382645246, 0.852089611060887, 0);
+				c = vec3(-0.01320729689014862, 0.8883393568142, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 45
+				a = vec3(-0.35161465062515, 0.9062186795705983, 0);
+				b = vec3(-0.2828814887130839, 0.9681304591418923, 0);
+				c = vec3(-0.05419452296364259, 0.9298275051330206, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 46
+				a = vec3(-0.35161465062515, 0.9062186795705983, 0);
+				b = vec3(-0.036786656438139956, 0.9086119747427146, 0);
+				c = vec3(-0.40307213382645246, 0.852089611060887, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 47
+				a = vec3(-0.35161465062515, 0.9062186795705983, 0);
+				b = vec3(-0.05419452296364259, 0.9298275051330206, 0);
+				c = vec3(-0.036786656438139956, 0.9086119747427146, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 48
+				a = vec3(-0.2828814887130839, 0.9681304591418923, 0);
+				b = vec3(-0.23487398470140908, 0.9909641648246997, 0);
+				c = vec3(-0.20820355838956767, 0.9954123052531765, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 49
+				a = vec3(-0.2828814887130839, 0.9681304591418923, 0);
+				b = vec3(-0.18157855884997412, 0.9957998651929839, 0);
+				c = vec3(-0.05419452296364259, 0.9298275051330206, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 50
+				a = vec3(-0.2828814887130839, 0.9681304591418923, 0);
+				b = vec3(-0.20820355838956767, 0.9954123052531765, 0);
+				c = vec3(-0.18157855884997412, 0.9957998651929839, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 51
+				a = vec3(-0.18157855884997412, 0.9957998651929839, 0);
+				b = vec3(-0.13545933526308443, 0.9881968149693902, 0);
+				c = vec3(-0.06720622383612318, 0.945184618904167, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 52
+				a = vec3(-0.18157855884997412, 0.9957998651929839, 0);
+				b = vec3(-0.06720622383612318, 0.945184618904167, 0);
+				c = vec3(-0.05419452296364259, 0.9298275051330206, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 53
+				a = vec3(-0.13545933526308443, 0.9881968149693902, 0);
+				b = vec3(-0.09776739180345512, 0.9707815819402797, 0);
+				c = vec3(-0.06720622383612318, 0.945184618904167, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 54
+				a = vec3(-0.036786656438139956, 0.9086119747427146, 0);
+				b = vec3(-0.01320729689014862, 0.8883393568142, 0);
+				c = vec3(-0.40307213382645246, 0.852089611060887, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 55
+				a = vec3(0.0042202136449747945, 0.8845087749381725, 0);
+				b = vec3(0.016281635552056056, 0.8940557636138102, 0);
+				c = vec3(0.454660628248168, 0.8096192622610336, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 56
+				a = vec3(0.0042202136449747945, 0.8845087749381725, 0);
+				b = vec3(0.454660628248168, 0.8096192622610336, 0);
+				c = vec3(0.4813797553338605, 0.7676465617049036, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 57
+				a = vec3(0.0042202136449747945, 0.8845087749381725, 0);
+				b = vec3(0.5073203350695092, 0.7212031096467229, 0);
+				c = vec3(0.5564329169348962, 0.6063615692780786, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 58
+				a = vec3(0.0042202136449747945, 0.8845087749381725, 0);
+				b = vec3(0.5564329169348962, 0.6063615692780786, 0);
+				c = vec3(0.5992287219566421, 0.46852917114966164, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 59
+				a = vec3(0.0042202136449747945, 0.8845087749381725, 0);
+				b = vec3(0.5992287219566421, 0.46852917114966164, 0);
+				c = vec3(0.6325573420918335, 0.315244303953398, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 60
+				a = vec3(0.0042202136449747945, 0.8845087749381725, 0);
+				b = vec3(0.6325573420918335, 0.315244303953398, 0);
+				c = vec3(-0.6111414837284166, 0.41667358981589064, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 61
+				a = vec3(0.0042202136449747945, 0.8845087749381725, 0);
+				b = vec3(-0.6111414837284166, 0.41667358981589064, 0);
+				c = vec3(-0.001810497308566056, 0.8845677069670345, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 62
+				a = vec3(0.0042202136449747945, 0.8845087749381725, 0);
+				b = vec3(0.4813797553338605, 0.7676465617049036, 0);
+				c = vec3(0.5073203350695092, 0.7212031096467229, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 63
+				a = vec3(0.016281635552056056, 0.8940557636138102, 0);
+				b = vec3(0.2694188452760045, 0.9849641476361913, 0);
+				c = vec3(0.33296967190002186, 0.9490860010648691, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 64
+				a = vec3(0.016281635552056056, 0.8940557636138102, 0);
+				b = vec3(0.33296967190002186, 0.9490860010648691, 0);
+				c = vec3(0.36299185735338735, 0.9231223498491709, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 65
+				a = vec3(0.016281635552056056, 0.8940557636138102, 0);
+				b = vec3(0.39572205138299993, 0.8889286771028196, 0);
+				c = vec3(0.454660628248168, 0.8096192622610336, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 66
+				a = vec3(0.016281635552056056, 0.8940557636138102, 0);
+				b = vec3(0.02207661839014882, 0.903425956202862, 0);
+				c = vec3(0.2694188452760045, 0.9849641476361913, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 67
+				a = vec3(0.016281635552056056, 0.8940557636138102, 0);
+				b = vec3(0.36299185735338735, 0.9231223498491709, 0);
+				c = vec3(0.39572205138299993, 0.8889286771028196, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 68
+				a = vec3(0.03617446929457138, 0.9327217225504636, 0);
+				b = vec3(0.07340641552891716, 0.971669245625013, 0);
+				c = vec3(0.10211940959110599, 0.9849355001221611, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 69
+				a = vec3(0.03617446929457138, 0.9327217225504636, 0);
+				b = vec3(0.10211940959110599, 0.9849355001221611, 0);
+				c = vec3(0.02207661839014882, 0.903425956202862, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 70
+				a = vec3(0.13551054269441326, 0.9948614544833974, 0);
+				b = vec3(0.20291159520407878, 1, 0);
+				c = vec3(0.02207661839014882, 0.903425956202862, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 71
+				a = vec3(0.13551054269441326, 0.9948614544833974, 0);
+				b = vec3(0.02207661839014882, 0.903425956202862, 0);
+				c = vec3(0.10211940959110599, 0.9849355001221611, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 72
+				a = vec3(0.20291159520407878, 1, 0);
+				b = vec3(0.2694188452760045, 0.9849641476361913, 0);
+				c = vec3(0.02207661839014882, 0.903425956202862, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				// Triangle 73
+				a = vec3(0.6532683692975588, 0.1540453563812133, 0);
+				b = vec3(0.658211395530906, -0.007529282874966237, 0);
+				c = vec3(-0.6480198377895905, -0.05247774395097515, 0);
+				if (pointInTriangle(vec3(p, 0.0), a, b, c)) return true;
+				return false;
+			}
+			vec2 rotate( vec2 v, float a ) {
+				float s = sin(a);
+				float c = cos(a);
+				mat2 m = mat2(c, -s, s, c);
+				return m * v;
+			}
+
+			// chunk(common);
+			// chunk(fog_pars_fragment);
+			// chunk(shadowmap_pars_fragment);
+	
+			varying float vLife;
+			varying float vRanRotation;
+			varying vec3 vRanColor1;
+			varying vec3 vRanColor2;
+
+			uniform vec3 color1;
+			uniform vec3 color2;
+			
+
+			void main() {
+
+				vec2 uv = gl_PointCoord - vec2(0.5);
+				uv = rotate(uv, radians(vRanRotation));
+				uv *= 3.0; 
+				if (!inPath(uv)) {
+					discard;  
+				}
+				vec3 outgoingLight = mix(vRanColor2, vRanColor1, smoothstep(0.0, 0.7, vLife));
+				
+				// chunk(shadowmap_fragment);
+
+				//outgoingLight *= shadowMask;//pow(shadowMask, vec3(0.75));
+				
+				// chunk(fog_fragment);
+				// chunk(linear_to_gamma_fragment);
+				gl_FragColor = vec4( outgoingLight, 1.0 );
+
+			}
+
+		</script>
+		<script id="particlesDistanceVert" type="x-shader/x-vertex">
+
+			uniform sampler2D texturePosition;
+
+			varying vec4 vWorldPosition;
+			
+			void main() {
+			
+				vec4 positionInfo = texture2D( texturePosition, position.xy );
+			
+				vec4 worldPosition = modelMatrix * vec4( positionInfo.xyz, 1.0 );
+				vec4 mvPosition = viewMatrix * worldPosition;
+			
+				gl_PointSize = 50.0 / length( mvPosition.xyz );
+			
+				vWorldPosition = worldPosition;
+			
+				gl_Position = projectionMatrix * mvPosition;
+			
+			}
+
+		</script>
+		<script id="particlesDistanceFrag" type="x-shader/x-fragment">
+
+			uniform vec3 lightPos;
+			varying vec4 vWorldPosition;
+			
+			//chunk(common);
+			
+			vec4 pack1K ( float depth ) {
+			
+			   depth /= 1000.0;
+			   const vec4 bitSh = vec4( 256.0 * 256.0 * 256.0, 256.0 * 256.0, 256.0, 1.0 );
+			   const vec4 bitMsk = vec4( 0.0, 1.0 / 256.0, 1.0 / 256.0, 1.0 / 256.0 );
+			   vec4 res = fract( depth * bitSh );
+			   res -= res.xxyz * bitMsk;
+			   return res;
+			
+			}
+			
+			float unpack1K ( vec4 color ) {
+			
+			   const vec4 bitSh = vec4( 1.0 / ( 256.0 * 256.0 * 256.0 ), 1.0 / ( 256.0 * 256.0 ), 1.0 / 256.0, 1.0 );
+			   return dot( color, bitSh ) * 1000.0;
+			
+			}
+			
+			void main () {
+			
+			   gl_FragColor = pack1K( length( vWorldPosition.xyz - lightPos.xyz ) );
+			
+			}
+
+		</script>
+
+		<script type="module" src="./script.js"></script>
+	</body>
+</html>
