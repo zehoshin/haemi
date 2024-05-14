@@ -438,13 +438,13 @@ function initLight() {
 //###########ANIMATION##############
 
 function animate() {
-    renderer.setAnimationLoop( render );
     requestAnimationFrame(animate);
     controls.update();
     let newTime = Date.now();
     dt = newTime - time;
     // render(dt);
     time = newTime;
+    renderer.setAnimationLoop( render );
 }
 
 function render(frame) {
