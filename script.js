@@ -141,7 +141,7 @@ function init() {
     // gui.addColor( settings, 'color1' );
     // gui.addColor( settings, 'color2' );
 
-    // time = Date.now();
+    time = Date.now();
     animate();
 
 }
@@ -434,16 +434,16 @@ function initLight() {
 
 function animate() {
     // controls.update();
-    // let newTime = Date.now();
-    // let dt = newTime - time;
+    let newTime = Date.now();
+    let dt = newTime - time;
     // render(dt);
-    renderer.setAnimationLoop( render );
-    // time = newTime;
+    renderer.setAnimationLoop( render(dt) );
+    time = newTime;
     // requestAnimationFrame(animate);
 }
 
 function render(dt) {
-    // initAnimation = Math.min(initAnimation + dt * 0.00025, 1);
+    initAnimation = Math.min(initAnimation + dt * 0.00025, 1);
     // lightUpdate(dt, camera);
 
     // updateSimulator(dt);
