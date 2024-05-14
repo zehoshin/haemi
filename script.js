@@ -75,8 +75,9 @@ function init() {
     scene = new THREE.Scene();
 
     camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.1, 10000);
-    camera.position.set(-440, 380, 800);
-    camera.lookAt(new THREE.Vector3(0 ,0 ,0 ))
+    // camera.position.set(-440, 380, 800);
+    camera.position.set( 0, 0, 0 );
+    camera.lookAt(new THREE.Vector3( 0, 0, 0 ))
     // settings.camera = camera;
     // settings.cameraPosition = camera.position;
 
@@ -138,6 +139,12 @@ function init() {
     gui.add( settings, 'shadowDarkness', 0, 1 );
     gui.addColor( settings, 'color1' );
     gui.addColor( settings, 'color2' );
+
+    scene.traverse(function(child) {
+        if (child.isMesh) {
+            child.userData.fixedPosition = child.position.clone();
+        }
+    });
 
     time = Date.now();
     renderer.setAnimationLoop( render );
@@ -436,7 +443,6 @@ function initLight() {
 }
 
 //###########ANIMATION##############
-
 function render(frame) {
     if (frame) {
         controls.update();
@@ -449,6 +455,15 @@ function render(frame) {
 
         updateSimulator(dt);
         updateParticles();
+
+        scene.traverse(function(child) {
+            if (child.isMesh && child.userData.fixedPosition) {
+                const fixedPosition = child.userData.fixedPosition.clone();
+                const worldPosition = camera.localToWorld(fixedPosition);
+                child.position.copy(worldPosition);
+            }
+        });
+
         renderer.render(scene, camera);
     }
 }
