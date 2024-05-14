@@ -112,7 +112,7 @@ function init() {
     cube.position.y = -150;
 
     cube.receiveShadow = true;
-    // scene.add( cube );
+    scene.add( cube );
 
     window.addEventListener('mousemove', onMove);
     window.addEventListener('keyup', onKeyUp);
@@ -133,7 +133,7 @@ function init() {
 
     settings.amount = query.amount;
 
-    gui.add(settings, 'amount', ['4k', '8k', '16k', '32k', '65k', '131k', '252k', '524k', '1m', '2m', '4m'])
+    gui.add(settings, 'amount', ['1k', '2k', '4k', '8k', '16k', '32k', '65k', '131k', '252k', '524k', '1m', '2m', '4m'])
     .onChange(function(value) {
         const newUrl = new URL(window.location.href);
         newUrl.searchParams.set('amount', value);
