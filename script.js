@@ -71,12 +71,12 @@ init()
 
 function init() {
 
-    settings.mouse = new THREE.Vector2(0,0);
-    settings.mouse3d = ray.origin;
+    // settings.mouse = new THREE.Vector2(0,0);
+    // settings.mouse3d = ray.origin;
 
     scene = new THREE.Scene();
 
-    camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.01, 20);
+    camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.01, 20);
     // camera.position.set(-440, 380, 800);
     // camera.lookAt(new THREE.Vector3(0 ,0 ,0 ))
     settings.camera = camera;
@@ -100,7 +100,7 @@ function init() {
     // initSimulator();
     // initParticles();
     // scene.add(partcleMesh);
-    
+
     const defaultLight = new THREE.HemisphereLight( 0xffffff, 0xbbbbff, 1 );
     defaultLight.position.set( 0.5, 1, 0.25 );
     scene.add( defaultLight );
@@ -113,34 +113,33 @@ function init() {
     } );
     const cube = new THREE.Mesh( geometry, material );
     cube.position.z = -2;
-
     cube.receiveShadow = true;
     scene.add( cube );
 
-    window.addEventListener('keyup', onKeyUp);
+    // window.addEventListener('keyup', onKeyUp);
 
-    controls = new OrbitControls( camera, renderer.domElement );
-    controls.update();
+    // controls = new OrbitControls( camera, renderer.domElement );
+    // controls.update();
 
     // GUI
-    const gui = new GUI();
+    // const gui = new GUI();
 
-    settings.amount = query.amount;
+    // settings.amount = query.amount;
 
-    gui.add(settings, 'amount', ['1k', '2k', '4k', '8k', '16k', '32k', '65k', '131k', '252k', '524k', '1m', '2m', '4m'])
-    .onChange(function(value) {
-        const newUrl = new URL(window.location.href);
-        newUrl.searchParams.set('amount', value);
-        window.location.href = newUrl.href;
-    });
-    gui.add( settings, 'speed', 0, 3 );
-    gui.add( settings, 'dieSpeed', 0, 0.05 );
-    gui.add( settings, 'radius', 0, 3 );
-    gui.add( settings, 'curlSize', 0, 0.05 );
-    gui.add( settings, 'attraction', -20, 20 );
-    gui.add( settings, 'shadowDarkness', 0, 1 );
-    gui.addColor( settings, 'color1' );
-    gui.addColor( settings, 'color2' );
+    // gui.add(settings, 'amount', ['1k', '2k', '4k', '8k', '16k', '32k', '65k', '131k', '252k', '524k', '1m', '2m', '4m'])
+    // .onChange(function(value) {
+    //     const newUrl = new URL(window.location.href);
+    //     newUrl.searchParams.set('amount', value);
+    //     window.location.href = newUrl.href;
+    // });
+    // gui.add( settings, 'speed', 0, 3 );
+    // gui.add( settings, 'dieSpeed', 0, 0.05 );
+    // gui.add( settings, 'radius', 0, 3 );
+    // gui.add( settings, 'curlSize', 0, 0.05 );
+    // gui.add( settings, 'attraction', -20, 20 );
+    // gui.add( settings, 'shadowDarkness', 0, 1 );
+    // gui.addColor( settings, 'color1' );
+    // gui.addColor( settings, 'color2' );
 
     time = Date.now();
     animate();
@@ -434,7 +433,7 @@ function initLight() {
 //###########ANIMATION##############
 
 function animate() {
-    controls.update();
+    // controls.update();
     let newTime = Date.now();
     let dt = newTime - time;
     // render(dt);
