@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 // import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-// import { ARButton } from 'three/addons/controls/ARButton.js';
+import { ARButton } from 'three/addons/controls/ARButton.js';
 
 
 //settings
@@ -38,9 +38,6 @@ const settings = {
     color2: '#8fff33',
 };
 
-
-let undef;
-
 let _width = 0;
 let _height = 0;
 
@@ -75,32 +72,6 @@ init()
 
 function init() {
 
-    // var mesh = null;
-
-    // var mtlLoader = new THREE.MTLLoader();
-    // mtlLoader.setPath('/models/');
-    // mtlLoader.load( 'scene.mtl', function( materials ) {
-    
-    //   materials.preload();
-    
-    //   var objLoader = new THREE.OBJLoader();
-    //   objLoader.setMaterials( materials );
-    //   objLoader.setPath('models/');
-    //   objLoader.load( 'scene.obj', function ( object ) {
-    
-    //     mesh = object;
-    //     mesh.position.z = 350;
-    //     mesh.position.y = -100;
-    //     let scaleNum = 55;
-    //     mesh.scale.set(scaleNum, scaleNum, scaleNum);
-    //     mesh.castShadow = true;
-    //     mesh.receiveShadow = true;
-    //     scene.add( mesh );
-    
-    //   } );
-    
-    // } );
-
     settings.mouse = new THREE.Vector2(0,0);
     settings.mouse3d = ray.origin;
 
@@ -111,10 +82,13 @@ function init() {
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.shadowMap.enabled = true;
     renderer.setSize( window.innerWidth, window.innerHeight );
-    // renderer.xr.enabled = true;
+    renderer.xr.enabled = true;
 
     document.body.appendChild(renderer.domElement);
-
+    document.body.appendChild( ARButton.createButton( renderer, {
+        requiredFeatures: ['hit-test'],
+        optionalFeatures: ['dom-overlay'], 
+    }));
     scene = new THREE.Scene();
 
     camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 100000);
@@ -139,9 +113,8 @@ function init() {
     cube.position.y = -150;
 
     cube.receiveShadow = true;
-    scene.add( cube );
+    // scene.add( cube );
 
-    window.addEventListener('resize', onResize);
     window.addEventListener('mousemove', onMove);
     window.addEventListener('keyup', onKeyUp);
 
@@ -177,8 +150,7 @@ function init() {
     gui.addColor( settings, 'color2' );
     
     time = Date.now();
-    onResize();
-    loop();
+    animate();
 }
 
 
@@ -194,7 +166,7 @@ function initSimulator() {
     copyShader = new THREE.RawShaderMaterial({
         uniforms: {
             resolution: { type: 'v2', value: new THREE.Vector2( TEXTURE_WIDTH, TEXTURE_HEIGHT ) },
-            texture: { type: 't', value: undef }
+            texture: { type: 't', value: null }
         },
         vertexShader: document.getElementById( 'quadVert' ).textContent,
         fragmentShader: document.getElementById( 'throughFrag' ).textContent});
@@ -202,8 +174,8 @@ function initSimulator() {
     positionShader = new THREE.RawShaderMaterial({
         uniforms: {
             resolution: { type: 'v2', value: new THREE.Vector2( TEXTURE_WIDTH, TEXTURE_HEIGHT ) },
-            texturePosition: { type: 't', value: undef },
-            textureDefaultPosition: { type: 't', value: undef },
+            texturePosition: { type: 't', value: null },
+            textureDefaultPosition: { type: 't', value: null },
             mouse3d: { type: 'v3', value: new THREE.Vector3 },
             speed: { type: 'f', value: 1 },
             dieSpeed: { type: 'f', value: 0 },
@@ -238,7 +210,6 @@ function initSimulator() {
     positionRenderTarget2 = positionRenderTarget.clone();
     copyTexture(createPositionTexture(), positionRenderTarget);
     copyTexture(positionRenderTarget, positionRenderTarget2);
-
 }
 
 function copyTexture(input, output) {
@@ -275,7 +246,6 @@ function createPositionTexture() {
 }
 
 function updateSimulator(dt) {
-
     if(settings.speed || settings.dieSpeed) {
         const r = 200;
         const h = 60;
@@ -301,7 +271,7 @@ function updateSimulator(dt) {
         );
         positionShader.uniforms.mouse3d.value.lerp(followPoint, 0.2);
 
-        renderer.setClearColor(0x000000, 1);
+        // renderer.setClearColor(0x000000, 1);
         updatePosition(dt);
         renderer.autoClearColor = autoClearColor;
     }
@@ -317,9 +287,14 @@ function updatePosition(dt) {
     positionShader.uniforms.textureDefaultPosition.value = textureDefaultPosition;
     positionShader.uniforms.texturePosition.value = positionRenderTarget2.texture;
     positionShader.uniforms.time.value += dt * 0.001;
+    
+    renderer.xr.enabled = false;
+
     renderer.setRenderTarget(positionRenderTarget);
     renderer.render(simulScene, simulCamera);
     renderer.setRenderTarget(null);
+
+    renderer.xr.enabled = true;
 }
 
 //##########PARTICLES#############
@@ -382,10 +357,10 @@ function createParticleMesh() {
         uniforms: THREE.UniformsUtils.merge([
             THREE.UniformsLib.shadowmap,
             {
-                texturePosition: { type: 't', value: undef },
+                texturePosition: { type: 't', value: null },
                 particleTexture: { type: 't', value: texture },
-                color1: { type: 'c', value: undef },
-                color2: { type: 'c', value: undef },
+                color1: { type: 'c', value: null },
+                color2: { type: 'c', value: null },
             }
         ]),
         vertexShader: document.getElementById( 'particlesVert' ).textContent,
@@ -401,7 +376,7 @@ function createParticleMesh() {
     paticlesMesh.customDistanceMaterial = new THREE.ShaderMaterial( {
         uniforms: {
             lightPos: { type: 'v3', value: new THREE.Vector3( 0, 0, 0 ) },
-            texturePosition: { type: 't', value: undef },
+            texturePosition: { type: 't', value: null },
             particleTexture: { type: 't', value: texture },
         },
         vertexShader: document.getElementById( 'particlesDistanceVert' ).textContent,
@@ -462,21 +437,16 @@ function initLight() {
 
 }
 
-function lightUpdate(dt) {
-    pointLight.shadowDarkness = shadowDarkness += (settings.shadowDarkness - shadowDarkness) * 0.1;
-}
-
 //###########ANIMATION##############
-function loop() {
+function animate() {
+    requestAnimationFrame( animate );
     controls.update();
     let newTime = Date.now();
-    requestAnimationFrame( loop );
     render(newTime - time, newTime);
     time = newTime;
 }
 
 function render(dt, newTime) {
-
     initAnimation = Math.min(initAnimation + dt * 0.00025, 1);
     // lightUpdate(dt, camera);
 
@@ -502,9 +472,4 @@ function onKeyUp(evt) {
 function onMove(evt) {
     settings.mouse.x = (evt.pageX / _width) * 2 - 1;
     settings.mouse.y = -(evt.pageY / _height) * 2 + 1;
-}
-
-function onResize() {
-    _width = window.innerWidth;
-    _height = window.innerHeight;
 }
