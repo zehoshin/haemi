@@ -43,6 +43,7 @@ const settings = {
 let camera, simulCamera, scene, simulScene, renderer, controls;
 
 let time = 0;
+let dt;
 let ray = new THREE.Ray();
 
 //particles
@@ -92,11 +93,11 @@ function init() {
     document.body.appendChild ( renderer.domElement );
     document.body.appendChild( ARButton.createButton( renderer ));
 
-    // initLight();
-    // scene.add(lightMesh);
-    // initSimulator();
-    // initParticles();
-    // scene.add(partcleMesh);
+    initLight();
+    scene.add(lightMesh);
+    initSimulator();
+    initParticles();
+    scene.add(partcleMesh);
 
     const defaultLight = new THREE.HemisphereLight( 0xffffff, 0xbbbbff, 1 );
     defaultLight.position.set( 0.5, 1, 0.25 );
@@ -383,7 +384,7 @@ function createParticleMesh() {
     return paticlesMesh;
 }
 
-function updateParticles(dt) {
+function updateParticles() {
     var mesh;
     partcleMesh.visible = true;
 
@@ -434,18 +435,19 @@ function animate() {
     requestAnimationFrame(animate);
     controls.update();
     let newTime = Date.now();
-    let dt = newTime - time;
+    dt = newTime - time;
     // render(dt);
     time = newTime;
 }
 
-function render(time, frame) {
+function render(frame) {
     if (frame) {
-    // initAnimation = Math.min(initAnimation + dt * 0.00025, 1);
+    
+    initAnimation = Math.min(initAnimation + dt * 0.00025, 1);
     // lightUpdate(dt, camera);
 
-    // updateSimulator(dt);
-    // updateParticles(dt);
+    updateSimulator(dt);
+    updateParticles();
     renderer.render(scene, camera);
     }
 }
