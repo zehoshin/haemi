@@ -140,7 +140,7 @@ function init() {
     gui.addColor( settings, 'color2' );
 
     time = Date.now();
-    animate();
+    renderer.setAnimationLoop( render );
 
 }
 
@@ -437,18 +437,13 @@ function initLight() {
 
 //###########ANIMATION##############
 
-function animate() {
-    requestAnimationFrame(animate);
-    controls.update();
-    let newTime = Date.now();
-    dt = newTime - time;
-    // render(dt);
-    time = newTime;
-    renderer.setAnimationLoop( render );
-}
-
 function render(frame) {
     if (frame) {
+        controls.update();
+        let newTime = Date.now();
+        dt = newTime - time;
+        time = newTime;
+
         initAnimation = Math.min(initAnimation + dt * 0.00025, 1);
         // lightUpdate(dt, camera);
 
@@ -457,6 +452,7 @@ function render(frame) {
         renderer.render(scene, camera);
     }
 }
+
 
 //#########EVENT LISTENER#############
 function onKeyUp(evt) {
