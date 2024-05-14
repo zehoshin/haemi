@@ -8,7 +8,7 @@ import { ARButton } from 'three/addons/controls/ARButton.js';
 //settings
 const urlParams = new URLSearchParams(window.location.search);
 const query = {
-    amount: urlParams.get('amount') || '16k',
+    amount: urlParams.get('amount') || '4k',
 };
 
 const amountMap = {
@@ -27,7 +27,7 @@ const amountMap = {
 const amountInfo = amountMap[query.amount];
 
 const settings = {
-    amount: '16k',
+    amount: '4k',
     speed: 0.2,
     dieSpeed: 0.002,
     radius: 0.8,
