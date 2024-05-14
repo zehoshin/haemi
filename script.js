@@ -68,7 +68,7 @@ let initAnimation = 0;
 
 //light
 let shadowDarkness = 0.45;
-let lightMesh, pointLight;
+let lightMesh;
 
 init()
 
@@ -416,7 +416,7 @@ function initLight() {
     const ambient = new THREE.AmbientLight( 0x333333 );
     lightMesh.add( ambient );
 
-    pointLight = new THREE.PointLight( 0xffffff, 1000, 1000, 1 );
+    const pointLight = new THREE.PointLight( 0xffffff, 1000, 1000, 1 );
     pointLight.castShadow = true;
     pointLight.shadow.camera.near = 1;
     pointLight.shadow.camera.far = 700;
@@ -441,7 +441,7 @@ function animate() {
     requestAnimationFrame( animate );
     controls.update();
     let newTime = Date.now();
-    render(newTime - time, newTime);
+    renderer.setAnimationLoop( render(newTime - time, newTime) );
     time = newTime;
 }
 
