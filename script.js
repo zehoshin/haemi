@@ -76,9 +76,9 @@ function init() {
 
     scene = new THREE.Scene();
 
-    camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.01, 20);
-    // camera.position.set(-440, 380, 800);
-    // camera.lookAt(new THREE.Vector3(0 ,0 ,0 ))
+    camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.1, 10000);
+    camera.position.set(-440, 380, 800);
+    camera.lookAt(new THREE.Vector3(0 ,0 ,0 ))
     // settings.camera = camera;
     // settings.cameraPosition = camera.position;
 
@@ -437,13 +437,13 @@ function animate() {
     let newTime = Date.now();
     let dt = newTime - time;
     // render(dt);
-    renderer.setAnimationLoop( render(dt) );
+    renderer.setAnimationLoop( render );
     time = newTime;
-    // requestAnimationFrame(animate);
+    requestAnimationFrame(animate);
 }
 
-function render(dt) {
-    initAnimation = Math.min(initAnimation + dt * 0.00025, 1);
+function render() {
+    // initAnimation = Math.min(initAnimation + dt * 0.00025, 1);
     // lightUpdate(dt, camera);
 
     // updateSimulator(dt);
