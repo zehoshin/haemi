@@ -74,8 +74,8 @@ function init() {
 
     scene = new THREE.Scene();
 
-    camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.1, 1000);
-    // camera.position.set(-440, 380, 800);
+    camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.1, 10000);
+    camera.position.set(-440, 380, 800);
     camera.lookAt(new THREE.Vector3(0 ,0 ,0 ))
     // settings.camera = camera;
     // settings.cameraPosition = camera.position;
@@ -280,12 +280,10 @@ function updatePosition(dt) {
     positionShader.uniforms.time.value += dt * 0.001;
     
     renderer.xr.enabled = false;
-
     renderer.setRenderTarget(positionRenderTarget);
     renderer.render(simulScene, simulCamera);
-    renderer.setRenderTarget(null);
-
     renderer.xr.enabled = true;
+    renderer.setRenderTarget(null);
 }
 
 //##########PARTICLES#############
@@ -442,13 +440,12 @@ function animate() {
 
 function render(frame) {
     if (frame) {
-    
-    initAnimation = Math.min(initAnimation + dt * 0.00025, 1);
-    // lightUpdate(dt, camera);
+        initAnimation = Math.min(initAnimation + dt * 0.00025, 1);
+        // lightUpdate(dt, camera);
 
-    updateSimulator(dt);
-    updateParticles();
-    renderer.render(scene, camera);
+        updateSimulator(dt);
+        updateParticles();
+        renderer.render(scene, camera);
     }
 }
 
