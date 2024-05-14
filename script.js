@@ -77,6 +77,15 @@ function init() {
     settings.mouse = new THREE.Vector2(0,0);
     settings.mouse3d = ray.origin;
 
+
+    scene = new THREE.Scene();
+
+    camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 100000);
+    camera.position.set(-440, 380, 800);
+    camera.lookAt(new THREE.Vector3(0 ,0 ,0 ))
+    settings.camera = camera;
+    settings.cameraPosition = camera.position;
+
     renderer = new THREE.WebGLRenderer({
         antialias : true,
         alpha: true,
@@ -87,16 +96,9 @@ function init() {
     renderer.setPixelRatio( window.devicePixelRatio );
     renderer.xr.enabled = true;
 
-    document.body.appendChild(renderer.domElement);
+    document.body.appendChild( renderer.domElement );
     document.body.appendChild( ARButton.createButton( renderer ));
-    scene = new THREE.Scene();
 
-    camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 100000);
-    camera.position.set(-440, 380, 800);
-    camera.lookAt(new THREE.Vector3(0 ,0 ,0 ))
-    settings.camera = camera;
-    settings.cameraPosition = camera.position;
-    
     initLight();
     scene.add(lightMesh);
     initSimulator();
@@ -140,9 +142,10 @@ function init() {
     gui.add( settings, 'shadowDarkness', 0, 1 );
     gui.addColor( settings, 'color1' );
     gui.addColor( settings, 'color2' );
-    
+
     time = Date.now();
     animate();
+
 }
 
 
@@ -280,13 +283,13 @@ function updatePosition(dt) {
     positionShader.uniforms.texturePosition.value = positionRenderTarget2.texture;
     positionShader.uniforms.time.value += dt * 0.001;
     
-    renderer.xr.enabled = false;
+    // renderer.xr.enabled = false;
 
     renderer.setRenderTarget(positionRenderTarget);
     renderer.render(simulScene, simulCamera);
     renderer.setRenderTarget(null);
 
-    renderer.xr.enabled = true;
+    // renderer.xr.enabled = true;
 }
 
 //##########PARTICLES#############
@@ -430,15 +433,18 @@ function initLight() {
 }
 
 //###########ANIMATION##############
+
 function animate() {
     controls.update();
     let newTime = Date.now();
-    render(newTime - time, newTime);
+    let dt = newTime - time;
+    render(dt);
+    renderer.setAnimationLoop( render(dt) );
     time = newTime;
     requestAnimationFrame(animate);
 }
 
-function render(dt, newTime) {
+function render(dt) {
     initAnimation = Math.min(initAnimation + dt * 0.00025, 1);
     // lightUpdate(dt, camera);
 
@@ -448,12 +454,11 @@ function render(dt, newTime) {
     ray.direction.set( settings.mouse.x, settings.mouse.y, 0.5 ).unproject( camera ).sub( ray.origin ).normalize();
     var distance = ray.origin.length() / Math.cos(Math.PI - ray.direction.angleTo(ray.origin));
     ray.origin.add( ray.direction.multiplyScalar(distance * 1.0) );
-    updateSimulator(dt);
+    // updateSimulator(dt);
     updateParticles(dt);
     renderer.render(scene, camera);
 }
 
-renderer.setAnimationLoop(render);
 
 //#########EVENT LISTENER#############
 function onKeyUp(evt) {
