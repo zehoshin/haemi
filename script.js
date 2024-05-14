@@ -439,13 +439,15 @@ function animate() {
     time = newTime;
 }
 
-function render() {
+function render(time, frame) {
+    if (frame) {
     // initAnimation = Math.min(initAnimation + dt * 0.00025, 1);
     // lightUpdate(dt, camera);
 
     // updateSimulator(dt);
     // updateParticles(dt);
     renderer.render(scene, camera);
+    }
 }
 
 //#########EVENT LISTENER#############
