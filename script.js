@@ -8,10 +8,12 @@ import { ARButton } from 'three/addons/controls/ARButton.js';
 //settings
 const urlParams = new URLSearchParams(window.location.search);
 const query = {
-    amount: urlParams.get('amount') || '16k',
+    amount: urlParams.get('amount') || '2k',
 };
 
 const amountMap = {
+    '1k': [32, 32, 0.16],
+    '2k': [64, 32, 0.21],
     '4k': [64, 64, 0.29],
     '8k': [128, 64, 0.42],
     '16k': [128, 128, 0.45],
@@ -27,7 +29,7 @@ const amountMap = {
 const amountInfo = amountMap[query.amount];
 
 const settings = {
-    amount: '16k',
+    amount: '2k',
     speed: 0.2,
     dieSpeed: 0.002,
     radius: 0.8,
@@ -85,10 +87,7 @@ function init() {
     renderer.xr.enabled = true;
 
     document.body.appendChild(renderer.domElement);
-    document.body.appendChild( ARButton.createButton( renderer, {
-        requiredFeatures: ['hit-test'],
-        optionalFeatures: ['dom-overlay'], 
-    }));
+    document.body.appendChild( ARButton.createButton( renderer ));
     scene = new THREE.Scene();
 
     camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 100000);
