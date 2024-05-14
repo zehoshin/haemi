@@ -279,11 +279,20 @@ function updatePosition(dt) {
     positionShader.uniforms.texturePosition.value = positionRenderTarget2.texture;
     positionShader.uniforms.time.value += dt * 0.001;
     
+    var currentRenderTarget = renderer.getRenderTarget();
+    var currentXrEnabled = renderer.xr.enabled;
+    var currentShadowAutoUpdate = renderer.shadowMap.autoUpdate;
+
     renderer.xr.enabled = false;
+    renderer.shadowMap.autoUpdate = false;
+
     renderer.setRenderTarget(positionRenderTarget);
+    renderer.clear();
     renderer.render(simulScene, simulCamera);
-    renderer.xr.enabled = true;
-    renderer.setRenderTarget(null);
+
+    renderer.xr.enabled = currentXrEnabled;
+    renderer.shadowMap.autoUpdate = currentShadowAutoUpdate;
+    renderer.setRenderTarget(currentRenderTarget);
 }
 
 //##########PARTICLES#############
