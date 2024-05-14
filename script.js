@@ -40,9 +40,6 @@ const settings = {
     color2: '#8fff33',
 };
 
-let _width = 0;
-let _height = 0;
-
 let camera, simulCamera, scene, simulScene, renderer, controls;
 
 let time = 0;
@@ -80,8 +77,8 @@ function init() {
     scene = new THREE.Scene();
 
     camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 100000);
-    // camera.position.set(-440, 380, 800);
-    // camera.lookAt(new THREE.Vector3(0 ,0 ,0 ))
+    camera.position.set(-440, 380, 800);
+    camera.lookAt(new THREE.Vector3(0 ,0 ,0 ))
     settings.camera = camera;
     settings.cameraPosition = camera.position;
 
@@ -104,19 +101,18 @@ function init() {
     initParticles();
     scene.add(partcleMesh);
 
-    const geometry = new THREE.BoxGeometry( 1000, 1, 1000 );
+    const geometry = new THREE.BoxGeometry( 1, 1, 1 );
     const material = new THREE.MeshStandardMaterial( { 
         color: 0xffffff,
         roughness: 1.0,
         metalness: 0.0,
     } );
     const cube = new THREE.Mesh( geometry, material );
-    cube.position.y = -150;
+    cube.position.z = -2;
 
     cube.receiveShadow = true;
     scene.add( cube );
 
-    window.addEventListener('mousemove', onMove);
     window.addEventListener('keyup', onKeyUp);
 
     controls = new OrbitControls( camera, renderer.domElement );
@@ -437,6 +433,7 @@ function animate() {
     controls.update();
     let newTime = Date.now();
     let dt = newTime - time;
+    // render(dt);
     renderer.setAnimationLoop( render(dt) );
     time = newTime;
     requestAnimationFrame(animate);
@@ -446,12 +443,6 @@ function render(dt) {
     initAnimation = Math.min(initAnimation + dt * 0.00025, 1);
     // lightUpdate(dt, camera);
 
-    // update mouse3d
-    camera.updateMatrixWorld();
-    ray.origin.setFromMatrixPosition( camera.matrixWorld );
-    ray.direction.set( settings.mouse.x, settings.mouse.y, 0.5 ).unproject( camera ).sub( ray.origin ).normalize();
-    var distance = ray.origin.length() / Math.cos(Math.PI - ray.direction.angleTo(ray.origin));
-    ray.origin.add( ray.direction.multiplyScalar(distance * 1.0) );
     updateSimulator(dt);
     updateParticles(dt);
     renderer.render(scene, camera);
@@ -463,9 +454,4 @@ function onKeyUp(evt) {
         settings.speed = settings.speed === 0 ? 0.05 : 0;
         settings.dieSpeed = settings.dieSpeed === 0 ? 0.003 : 0;
     }
-}
-
-function onMove(evt) {
-    settings.mouse.x = (evt.pageX / _width) * 2 - 1;
-    settings.mouse.y = -(evt.pageY / _height) * 2 + 1;
 }
