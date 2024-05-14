@@ -103,7 +103,7 @@ function init() {
     defaultLight.position.set( 0.5, 1, 0.25 );
     scene.add( defaultLight );
 
-    const geometry = new THREE.BoxGeometry( 1, 1, 1 );
+    const geometry = new THREE.BoxGeometry( 0.1, 0.1, 0.1 );
     const material = new THREE.MeshStandardMaterial( { 
         color: 0xffffff,
         roughness: 1.0,
