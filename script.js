@@ -60,7 +60,7 @@ let color1, color2, tmpColor;
 let texture;
 
 //simulator
-let copyShader, positionShader, textureDefaultPosition, positionRenderTarget, positionRenderTarget2;
+let copyShader, positionShader, textureDefaultPosition, positionRenderTarget, positionRenderTarget2, rotationTexture;
 
 let simulMesh;
 let followPoint;
@@ -98,9 +98,9 @@ function init() {
     scene = new THREE.Scene();
 
     camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.1, 10000);
-    camera.position.set( 0, 0, 30 );
+    // camera.position.set( 0, 0, 30 );
     // camera.position.set(-440, 380, 800);
-    // camera.position.set( 0, 500, 600 );
+    camera.position.set( 0, 500, 600 );
 
     // camera.lookAt(new THREE.Vector3( 0, 0, 0 ))
     // settings.camera = camera;
@@ -121,7 +121,7 @@ function init() {
     renderer.setPixelRatio( window.devicePixelRatio );
     renderer.setSize( window.innerWidth, window.innerHeight );
     renderer.xr.enabled = true;
-    // renderer.setClearColor( 0xffffff, 1 )
+    // renderer.setClearColor( 0x000000, 1 )
 
     document.body.appendChild ( renderer.domElement );
     document.body.appendChild( ARButton.createButton( renderer ));
@@ -283,6 +283,8 @@ function initSimulator() {
     positionRenderTarget2 = positionRenderTarget.clone();
     copyTexture(createPositionTexture(), positionRenderTarget);
     copyTexture(positionRenderTarget, positionRenderTarget2);
+
+    rotationTexture = createRotationTexture();
 }
 
 function copyTexture(input, output) {
@@ -315,6 +317,21 @@ function createPositionTexture() {
     texture.generateMipmaps = false;
     texture.flipY = false;
     textureDefaultPosition = texture;
+    return texture;
+}
+
+function createRotationTexture() {
+    const rotations = new Float32Array(AMOUNT * 4);
+    for (let i = 0; i < AMOUNT; i++) {
+        rotations[i * 4 + 0] = Math.random() * 2.0 * Math.PI;
+        rotations[i * 4 + 1] = Math.random() * 2.0 * Math.PI; 
+        rotations[i * 4 + 2] = Math.random() * 2.0 * Math.PI; 
+        rotations[i * 4 + 3] = Math.random(); 
+    }
+    const texture = new THREE.DataTexture(rotations, TEXTURE_WIDTH, TEXTURE_HEIGHT, THREE.RGBAFormat, THREE.FloatType);
+    texture.needsUpdate = true;
+    texture.generateMipmaps = false;
+    texture.flipY = false;
     return texture;
 }
 
@@ -387,7 +404,7 @@ function updatePosition(dt) {
 //##########PARTICLES#############
 function loadGLBModel() {
     const loader = new GLTFLoader();
-    loader.load('models/Petal1.glb', function(gltf) {
+    loader.load('models/flower2.glb', function(gltf) {
         glbModel = gltf.scene.children[0];
         glbMaterial = glbModel.material;
         initParticles(); 
@@ -411,13 +428,17 @@ function createParticleMesh() {
         vertexShader: document.getElementById('vertexShader').textContent,
         fragmentShader: document.getElementById('fragmentShader').textContent,
         uniforms: {
+            resolution: { type: 'v2', value: new THREE.Vector2( TEXTURE_WIDTH, TEXTURE_HEIGHT ) },
+            texturePosition: { value: positionRenderTarget.texture },
+            textureRotation: { value: rotationTexture },
             color1: { value: new THREE.Color(settings.color1) }, 
             color2: { value: new THREE.Color(settings.color2) },
             lightPosition: { value: new THREE.Vector3(10, 10, 10) },
             ambientLightIntensity: { value: 1.0 },
             metalness: { value: 0.0 },
             roughness: { value: 1.0 }, 
-        }
+        },
+        transparent: true,
     });
     const mesh = new THREE.InstancedMesh(geometry, material, AMOUNT);
     const dummy = new THREE.Object3D();
@@ -440,7 +461,7 @@ function createParticleMesh() {
             Math.random() * 2 * Math.PI
         );
 
-        const scale = Math.random() * 0.6 + 3;
+        const scale = Math.random() * 0.6 + 1.5;
         dummy.scale.set(scale, scale, scale);
 
         rotationSpeeds[i * 3] = Math.random() * 0.02 - 0.01; 
@@ -461,16 +482,21 @@ function updateParticles(dt) {
     if (!particleMesh) return;
 
     const dummy = new THREE.Object3D();
-    const positions = new Float32Array(TEXTURE_WIDTH * TEXTURE_HEIGHT * 4);
-    renderer.readRenderTargetPixels(positionRenderTarget, 0, 0, TEXTURE_WIDTH, TEXTURE_HEIGHT, positions);
+    // const positions = new Float32Array(TEXTURE_WIDTH * TEXTURE_HEIGHT * 4);
+    
+    // renderer.readRenderTargetPixels(positionRenderTarget, 0, 0, TEXTURE_WIDTH, TEXTURE_HEIGHT, positions);
+
+    particleMesh.material.uniforms.texturePosition.value = positionRenderTarget.texture;
+    particleMesh.material.uniformsNeedUpdate = true;
+
 
     for (let i = 0; i < AMOUNT; i++) {
-        const i4 = i * 4;
-        const x = positions[i4 + 0];
-        const y = positions[i4 + 1];
-        const z = positions[i4 + 2];
+        // const i4 = i * 4;
+        // const x = positions[i4 + 0];
+        // const y = positions[i4 + 1];
+        // const z = positions[i4 + 2];
 
-        dummy.position.set(x, y, z);
+        // dummy.position.set(x, y, z);
 
         const rotationSpeed = rotationSpeeds.subarray(i * 3, i * 3 + 3);
         const rotationMatrix = new THREE.Matrix4();
