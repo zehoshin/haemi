@@ -387,7 +387,7 @@ function updatePosition(dt) {
 //##########PARTICLES#############
 function loadGLBModel() {
     const loader = new GLTFLoader();
-    loader.load('models/flower2.glb', function(gltf) {
+    loader.load('models/Petal1.glb', function(gltf) {
         glbModel = gltf.scene.children[0];
         glbMaterial = glbModel.material;
         initParticles(); 
@@ -440,7 +440,7 @@ function createParticleMesh() {
             Math.random() * 2 * Math.PI
         );
 
-        const scale = Math.random() * 0.6 + 0.2;
+        const scale = Math.random() * 0.6 + 3;
         dummy.scale.set(scale, scale, scale);
 
         rotationSpeeds[i * 3] = Math.random() * 0.02 - 0.01; 
