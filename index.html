@@ -219,6 +219,95 @@
 			}
 
 		</script>
+		<script id="vertexShader" type="x-shader/x-vertex">
+			attribute float colorIndex;
+			varying float vColorIndex;
+			varying vec3 vNormal;
+			varying vec3 vPosition;
+		
+			void main() {
+				vColorIndex = colorIndex;
+				vNormal = normalize(normalMatrix * normal);
+				vPosition = (modelViewMatrix * instanceMatrix * vec4(position, 1.0)).xyz;
+				vec4 mvPosition = modelViewMatrix * instanceMatrix * vec4(position, 1.0);
+				gl_Position = projectionMatrix * mvPosition;
+			}
+		</script>
+		<script id="fragmentShader" type="x-shader/x-fragment">
+			uniform vec3 color1;
+			uniform vec3 color2;
+			uniform vec3 lightPosition;
+			uniform float ambientLightIntensity;
+			uniform float metalness;
+			uniform float roughness;
+			varying float vColorIndex;
+			varying vec3 vNormal;
+			varying vec3 vPosition;
+		
+			vec3 fresnelSchlick(float cosTheta, vec3 F0) {
+				return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
+			}
+		
+			void main() {
+				vec3 lightDir = normalize(lightPosition - vPosition);
+				float lightIntensity = max(dot(vNormal, lightDir), 0.0);
+				vec3 color = mix(color1, color2, vColorIndex);
+				
+				// CACL AMBIENT LIGHT
+				vec3 ambient = color * ambientLightIntensity;
+		
+				// CALC METALIC MATERIAL
+				vec3 F0 = mix(vec3(0.04), color, metalness);
+				vec3 viewDir = normalize(-vPosition);
+				vec3 halfDir = normalize(lightDir + viewDir);
+				float NDF = pow(max(dot(vNormal, halfDir), 0.0), roughness);
+				float G = max(dot(vNormal, lightDir) * dot(vNormal, viewDir), 0.0);
+				vec3 F = fresnelSchlick(max(dot(halfDir, viewDir), 0.0), F0);
+		
+				vec3 kD = vec3(1.0) - F;
+				kD *= 1.0 - metalness;
+		
+				vec3 diffuse = kD * color * lightIntensity;
+				vec3 specular = F * NDF * G / (4.0 * max(dot(vNormal, lightDir), 0.0) * max(dot(vNormal, viewDir), 0.0) + 0.001);
+		
+				vec3 finalColor = ambient + diffuse + specular;
+				gl_FragColor = vec4(finalColor, 1.0);
+			}
+		</script>
+
+		<script id="ppVertexShader" type="x-shader/x-vertex">
+			varying vec2 vUv;
+			void main() {
+				vUv = uv;
+				gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+			}
+		</script>
+		
+		<script id="ppFragmentShader" type="x-shader/x-fragment" >
+		  uniform sampler2D cameraTexture;
+		  uniform sampler2D tDiffuse; // Scene contents 
+		  uniform sampler2D bloomTexture;
+		  uniform vec2 u_resolutionRatio;
+		  uniform bool useAdditiveBlend;
+		  
+		  varying vec2 vUv;
+		  
+		  vec4 normalBlend(vec4 x, vec4 y, float opacity) {
+		  return y * opacity + x * (1.0 - opacity);
+		  }
+		  
+		  void main(void) {
+			vec4 cameraColor = texture2D( cameraTexture, vUv);
+			vec4 sceneColor = texture2D( tDiffuse, vUv);
+			vec4 bloomColor = texture2D( bloomTexture, vUv);
+		  
+			gl_FragColor = normalBlend(cameraColor, sceneColor, sceneColor.a);
+			gl_FragColor += bloomColor;
+			// gl_FragColor += bloomColor;
+			// gl_FragColor = vec4(length(cameraColor.rgb), length(bloomColor.rgb), length(sceneColor.rgb), 1.); // Shows camera in red and scene in blue
+		  }
+		</script>
+
 		<script id="particlesVert" type="x-shader/x-vertex">
 
 			uniform sampler2D texturePosition;
@@ -235,7 +324,6 @@
 			// chunk(shadowmap_pars_vertex);
 			
 			void main() {
-			
 				vec4 positionInfo = texture2D( texturePosition, position.xy );
 			
 				vec4 worldPosition = modelMatrix * vec4( positionInfo.xyz, 1.0 );
@@ -249,7 +337,7 @@
 				vRanColor1 = ranColor1;
 				vRanColor2 = ranColor2;
 
-				gl_PointSize = 6000.0 / length( mvPosition.xyz ) * smoothstep(0.0, 0.2, positionInfo.w);
+				gl_PointSize = 10000.0 / length( mvPosition.xyz ) * smoothstep(0.0, 0.2, positionInfo.w);
 			
 				gl_Position = projectionMatrix * mvPosition;
 			
@@ -738,6 +826,5 @@
 			}
 
 		</script>
-
 	</body>
 </html>

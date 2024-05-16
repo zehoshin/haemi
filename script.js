@@ -1,9 +1,16 @@
 import * as THREE from 'three'
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-// import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { ARButton } from 'three/addons/controls/ARButton.js';
 
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { TexturePass } from 'three/addons/postprocessing/TexturePass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/AlphaUnrealBloomPass.js';
+// import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
 //settings
 const urlParams = new URLSearchParams(window.location.search);
@@ -12,6 +19,7 @@ const query = {
 };
 
 const amountMap = {
+    '256': [16, 16, 0.1],
     '1k': [32, 32, 0.16],
     '2k': [64, 32, 0.21],
     '4k': [64, 64, 0.29],
@@ -30,14 +38,14 @@ const amountInfo = amountMap[query.amount];
 
 const settings = {
     amount: '2k',
-    speed: 0.2,
-    dieSpeed: 0.002,
-    radius: 0.8,
+    speed: 0.4,
+    dieSpeed: 0.0025,
+    radius: 0.6,
     curlSize: 0.015,
-    attraction: -1.5,
+    attraction: 2.0,
     shadowDarkness: 0.66,
-    color1: '#ff70e0',
-    color2: '#8fff33',
+    color1: '#ffa8e4',
+    color2: '#efccff',
 };
 
 let camera, simulCamera, scene, simulScene, renderer, controls;
@@ -47,7 +55,7 @@ let dt;
 let ray = new THREE.Ray();
 
 //particles
-let partcleMesh;
+let particleMesh;
 let color1, color2, tmpColor;
 let texture;
 
@@ -68,6 +76,21 @@ let initAnimation = 0;
 let shadowDarkness = 0.45;
 let lightMesh;
 
+//instance
+let glbModel;
+let glbMaterial;
+let rotationSpeeds;
+let colorIndices;
+
+const params = {
+    exposure: 1,
+    strength: 3.0,
+    threshold: 0,
+    radius: 1.0,
+};
+
+let composer, sceneTarget, copyPass, combinePass, bloomComposer;
+
 init()
 
 function init() {
@@ -75,36 +98,63 @@ function init() {
     scene = new THREE.Scene();
 
     camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.1, 10000);
+    camera.position.set( 0, 0, 30 );
     // camera.position.set(-440, 380, 800);
-    camera.position.set( 0, 0, 0 );
-    camera.lookAt(new THREE.Vector3( 0, 0, 0 ))
+    // camera.position.set( 0, 500, 600 );
+
+    // camera.lookAt(new THREE.Vector3( 0, 0, 0 ))
     // settings.camera = camera;
     // settings.cameraPosition = camera.position;
 
     renderer = new THREE.WebGLRenderer({
+        // canvas,
+        // context: renderer.getContext(), 
         antialias : true,
         alpha: true,
     });
+    // renderer.debug.checkShaderErrors = false;
+    // renderer.autoClear = false;
+    // renderer.autoClearDepth = false;
+
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.shadowMap.enabled = true;
     renderer.setPixelRatio( window.devicePixelRatio );
     renderer.setSize( window.innerWidth, window.innerHeight );
     renderer.xr.enabled = true;
+    // renderer.setClearColor( 0xffffff, 1 )
 
     document.body.appendChild ( renderer.domElement );
     document.body.appendChild( ARButton.createButton( renderer ));
 
+    //
+
+    const renderScene = new RenderPass( scene, camera );
+
+    const bloomPass = new UnrealBloomPass( new THREE.Vector2( window.innerWidth, window.innerHeight ), 1.5, 0.4, 0.85 );
+    bloomPass.threshold = params.threshold;
+    bloomPass.strength = params.strength;
+    bloomPass.radius = params.radius;
+
+    const outputPass = new OutputPass();
+
+    composer = new EffectComposer( renderer );
+    // composer.addPass( copyPass );
+    composer.addPass( renderScene )
+    composer.addPass( bloomPass );
+    composer.addPass( outputPass );
+
+    //
+
     initLight();
     scene.add(lightMesh);
     initSimulator();
-    initParticles();
-    scene.add(partcleMesh);
+    loadGLBModel();
 
-    const defaultLight = new THREE.HemisphereLight( 0xffffff, 0xbbbbff, 1 );
+    const defaultLight = new THREE.HemisphereLight( 0xffffff, 0xbbbbff, 3 );
     defaultLight.position.set( 0.5, 1, 0.25 );
     scene.add( defaultLight );
 
-    const geometry = new THREE.BoxGeometry( 0.1, 0.1, 0.1 );
+    const geometry = new THREE.BoxGeometry( 10, 10, 10 );
     const material = new THREE.MeshStandardMaterial( { 
         color: 0xffffff,
         roughness: 1.0,
@@ -114,6 +164,18 @@ function init() {
     cube.position.z = -2;
     cube.receiveShadow = true;
     scene.add( cube );
+
+    const loader = new GLTFLoader();
+    // loader.load(
+    //     'models/glb',
+    //     function ( gltf ) {
+    //         let scaleFactor = 100;
+    //         gltf.scene.position.y = -100;
+    //         gltf.scene.position.z = 650;
+    //         gltf.scene.scale.set ( scaleFactor, scaleFactor, scaleFactor);
+    //         scene.add( gltf.scene );
+    //     },
+    // );
 
     window.addEventListener('keyup', onKeyUp);
 
@@ -125,7 +187,7 @@ function init() {
 
     settings.amount = query.amount;
 
-    gui.add(settings, 'amount', ['1k', '2k', '4k', '8k', '16k', '32k', '65k', '131k', '252k', '524k', '1m', '2m', '4m'])
+    gui.add(settings, 'amount', ['256', '1k', '2k', '4k', '8k', '16k', '32k', '65k', '131k', '252k', '524k', '1m', '2m', '4m'])
     .onChange(function(value) {
         const newUrl = new URL(window.location.href);
         newUrl.searchParams.set('amount', value);
@@ -140,11 +202,24 @@ function init() {
     gui.addColor( settings, 'color1' );
     gui.addColor( settings, 'color2' );
 
-    scene.traverse(function(child) {
-        if (child.isMesh) {
-            child.userData.fixedPosition = child.position.clone();
-        }
-    });
+    const bloomFolder = gui.addFolder( 'bloom' );
+
+    bloomFolder.add( params, 'threshold', 0.0, 1.0 ).onChange( function ( value ) {
+        bloomPass.threshold = Number( value );
+    } );
+
+    bloomFolder.add( params, 'strength', 0.0, 3.0 ).onChange( function ( value ) {
+        bloomPass.strength = Number( value );
+    } );
+
+    gui.add( params, 'radius', 0.0, 1.0 ).step( 0.01 ).onChange( function ( value ) {
+        bloomPass.radius = Number( value );
+    } );
+
+    const toneMappingFolder = gui.addFolder( 'tone mapping' );
+    toneMappingFolder.add( params, 'exposure', 0.1, 2 ).onChange( function ( value ) {
+        renderer.toneMappingExposure = Math.pow( value, 4.0 );
+    } );
 
     time = Date.now();
     renderer.setAnimationLoop( render );
@@ -245,8 +320,8 @@ function createPositionTexture() {
 
 function updateSimulator(dt) {
     if(settings.speed || settings.dieSpeed) {
-        const r = 200;
-        const h = 60;
+        const r = 500;
+        const h = 50;
         
         let autoClearColor = renderer.autoClearColor;
         renderer.autoClearColor = false;
@@ -261,11 +336,18 @@ function updateSimulator(dt) {
         positionShader.uniforms.initAnimation.value = initAnimation;
 
         // positionShader.uniforms.mouse3d.value.copy(settings.mouse3d);
-        followPointTime += dt * 0.001 * settings.speed;
+        // followPointTime += dt * 0.001 * settings.speed;
+        followPointTime += dt * 0.001;
+
+        // followPoint.set(
+        //     Math.cos(followPointTime) * r,
+        //     Math.cos(followPointTime * 4.0) * h,
+        //     Math.sin(followPointTime * 2.0) * r
+        // );
         followPoint.set(
-            Math.cos(followPointTime) * r,
-            Math.cos(followPointTime * 4.0) * h,
-            Math.sin(followPointTime * 2.0) * r
+            Math.cos(followPointTime) * r * 1.2,  // x
+            Math.cos(followPointTime * 2.5) * h,  // y
+            Math.sin(followPointTime) * r   // z
         );
         positionShader.uniforms.mouse3d.value.lerp(followPoint, 0.2);
 
@@ -303,114 +385,111 @@ function updatePosition(dt) {
 }
 
 //##########PARTICLES#############
-function initParticles() {
-
-    tmpColor = new THREE.Color();
-    color1 = new THREE.Color(settings.color1);
-    color2 = new THREE.Color(settings.color2);
-    partcleMesh = createParticleMesh();
-    partcleMesh.visible = false;
-
+function loadGLBModel() {
+    const loader = new GLTFLoader();
+    loader.load('models/flower2.glb', function(gltf) {
+        glbModel = gltf.scene.children[0];
+        glbMaterial = glbModel.material;
+        initParticles(); 
+        scene.add(particleMesh);
+    });
 }
 
-function getRandomAdjacentColor(hex, range = 0.3) {
-    let r = parseInt(hex.slice(1, 3), 16) / 255;
-    let g = parseInt(hex.slice(3, 5), 16) / 255;
-    let b = parseInt(hex.slice(5, 7), 16) / 255;
+//##########입자#############
+function initParticles() {
+    if (!glbModel) {
+        console.error("GLB 모델이 로드되지 않았습니다.");
+        return;
+    }
 
-    r = Math.min(1, Math.max(0, r + (Math.random() * range - range / 2)));
-    g = Math.min(1, Math.max(0, g + (Math.random() * range - range / 2)));
-    b = Math.min(1, Math.max(0, b + (Math.random() * range - range / 2)));
-
-    return new Float32Array([r, g, b]);
+    particleMesh = createParticleMesh();
 }
 
 function createParticleMesh() {
-    var position = new Float32Array(AMOUNT * 3);
-    var ranRotation = new Float32Array(AMOUNT);
-    var ranColor1 = new Float32Array(AMOUNT * 3);
-    var ranColor2 = new Float32Array(AMOUNT * 3);
-    
-    var i3;
-    for(var i = 0; i < AMOUNT; i++ ) {
-        i3 = i * 3;
-        position[i3 + 0] = (i % TEXTURE_WIDTH) / TEXTURE_WIDTH;
-        position[i3 + 1] = ~~(i / TEXTURE_WIDTH) / TEXTURE_HEIGHT;
-
-        ranRotation[i] = Math.random() * 360.0;
-
-        var ranColor1Obj = getRandomAdjacentColor(settings.color1);
-
-        ranColor1[i3 + 0] = ranColor1Obj[0];  // R
-        ranColor1[i3 + 1] = ranColor1Obj[1];  // G
-        ranColor1[i3 + 2] = ranColor1Obj[2];  // B
-
-        var ranColor2Obj = getRandomAdjacentColor(settings.color2);
-
-        ranColor2[i3 + 0] = ranColor2Obj[0];  // R
-        ranColor2[i3 + 1] = ranColor2Obj[1];  // G
-        ranColor2[i3 + 2] = ranColor2Obj[2];  // B
-    }
-
-    var geometry = new THREE.BufferGeometry();
-    geometry.setAttribute( 'position', new THREE.BufferAttribute( position, 3 ));
-    geometry.setAttribute( 'ranRotation', new THREE.BufferAttribute(ranRotation, 1))
-    geometry.setAttribute( 'ranColor1', new THREE.BufferAttribute(ranColor1, 3))
-    geometry.setAttribute( 'ranColor2', new THREE.BufferAttribute(ranColor2, 3))
-
-    var material = new THREE.ShaderMaterial({
-        uniforms: THREE.UniformsUtils.merge([
-            THREE.UniformsLib.shadowmap,
-            {
-                texturePosition: { type: 't', value: null },
-                particleTexture: { type: 't', value: texture },
-                color1: { type: 'c', value: null },
-                color2: { type: 'c', value: null },
-            }
-        ]),
-        vertexShader: document.getElementById( 'particlesVert' ).textContent,
-        fragmentShader: document.getElementById( 'particlesFrag' ).textContent,
-        blending: THREE.NoBlending
-    });
-    material.uniforms.color1.value = color1;
-    material.uniforms.color2.value = color2;
-
-
-    var paticlesMesh = new THREE.Points( geometry, material );
-
-    paticlesMesh.customDistanceMaterial = new THREE.ShaderMaterial( {
+    const geometry = glbModel.geometry;
+    const material = new THREE.ShaderMaterial({
+        vertexShader: document.getElementById('vertexShader').textContent,
+        fragmentShader: document.getElementById('fragmentShader').textContent,
         uniforms: {
-            lightPos: { type: 'v3', value: new THREE.Vector3( 0, 0, 0 ) },
-            texturePosition: { type: 't', value: null },
-            particleTexture: { type: 't', value: texture },
-        },
-        vertexShader: document.getElementById( 'particlesDistanceVert' ).textContent,
-        fragmentShader: document.getElementById( 'particlesDistanceFrag' ).textContent,
-        depthTest: true,
-        depthWrite: true,
-        side: THREE.BackSide,
-        blending: THREE.NoBlending
+            color1: { value: new THREE.Color(settings.color1) }, 
+            color2: { value: new THREE.Color(settings.color2) },
+            lightPosition: { value: new THREE.Vector3(10, 10, 10) },
+            ambientLightIntensity: { value: 1.0 },
+            metalness: { value: 0.0 },
+            roughness: { value: 1.0 }, 
+        }
     });
+    const mesh = new THREE.InstancedMesh(geometry, material, AMOUNT);
+    const dummy = new THREE.Object3D();
+    mesh.receiveShadow = true;
 
-    paticlesMesh.castShadow = true;
-    paticlesMesh.receiveShadow = true;
+    rotationSpeeds = new Float32Array(AMOUNT * 3);
+    colorIndices = new Float32Array(AMOUNT); 
 
-    return paticlesMesh;
+    for (let i = 0; i < AMOUNT; i++) {
+        dummy.position.set(
+            (i % TEXTURE_WIDTH) / TEXTURE_WIDTH,
+            ~~(i / TEXTURE_WIDTH) / TEXTURE_HEIGHT,
+            0
+        );
+
+        // 랜덤 회전 설정
+        dummy.rotation.set(
+            Math.random() * 2 * Math.PI,
+            Math.random() * 2 * Math.PI,
+            Math.random() * 2 * Math.PI
+        );
+
+        const scale = Math.random() * 0.6 + 0.2;
+        dummy.scale.set(scale, scale, scale);
+
+        rotationSpeeds[i * 3] = Math.random() * 0.02 - 0.01; 
+        rotationSpeeds[i * 3 + 1] = Math.random() * 0.02 - 0.01;
+        rotationSpeeds[i * 3 + 2] = Math.random() * 0.02 - 0.01;
+        
+        colorIndices[i] = Math.random();
+
+        dummy.updateMatrix();
+        mesh.setMatrixAt(i, dummy.matrix);
+    }
+    geometry.setAttribute('colorIndex', new THREE.InstancedBufferAttribute(colorIndices, 1));
+    
+    return mesh;
 }
 
-function updateParticles() {
-    var mesh;
-    partcleMesh.visible = true;
+function updateParticles(dt) {
+    if (!particleMesh) return;
 
-    tmpColor.setStyle(settings.color1);
-    color1.lerp(tmpColor, 0.05);
+    const dummy = new THREE.Object3D();
+    const positions = new Float32Array(TEXTURE_WIDTH * TEXTURE_HEIGHT * 4);
+    renderer.readRenderTargetPixels(positionRenderTarget, 0, 0, TEXTURE_WIDTH, TEXTURE_HEIGHT, positions);
 
-    tmpColor.setStyle(settings.color2);
-    color2.lerp(tmpColor, 0.05);
+    for (let i = 0; i < AMOUNT; i++) {
+        const i4 = i * 4;
+        const x = positions[i4 + 0];
+        const y = positions[i4 + 1];
+        const z = positions[i4 + 2];
 
-    mesh = partcleMesh;
-    mesh.material.uniforms.texturePosition.value = positionRenderTarget.texture;
-    mesh.customDistanceMaterial.uniforms.texturePosition.value = positionRenderTarget.texture;
+        dummy.position.set(x, y, z);
+
+        const rotationSpeed = rotationSpeeds.subarray(i * 3, i * 3 + 3);
+        const rotationMatrix = new THREE.Matrix4();
+        particleMesh.getMatrixAt(i, rotationMatrix);
+        const currentRotation = new THREE.Euler().setFromRotationMatrix(rotationMatrix);
+
+        dummy.rotation.x = currentRotation.x + rotationSpeed[0] * dt + (Math.random() - 0.5) * 0.01;
+        dummy.rotation.y = currentRotation.y + rotationSpeed[1] * dt + (Math.random() - 0.5) * 0.01;
+        dummy.rotation.z = currentRotation.z + rotationSpeed[2] * dt + (Math.random() - 0.5) * 0.01;
+        
+        const scaleMatrix = new THREE.Matrix4();
+        particleMesh.getMatrixAt(i, scaleMatrix);
+        const currentScale = new THREE.Vector3().setFromMatrixScale(scaleMatrix);
+        dummy.scale.copy(currentScale);
+
+        dummy.updateMatrix();
+        particleMesh.setMatrixAt(i, dummy.matrix);
+    }
+    particleMesh.instanceMatrix.needsUpdate = true;
 }
 
 //##########LIGHT##########
@@ -452,19 +531,11 @@ function render(frame) {
 
         initAnimation = Math.min(initAnimation + dt * 0.00025, 1);
         // lightUpdate(dt, camera);
-
         updateSimulator(dt);
-        updateParticles();
+        updateParticles(dt);
 
-        scene.traverse(function(child) {
-            if (child.isMesh && child.userData.fixedPosition) {
-                const fixedPosition = child.userData.fixedPosition.clone();
-                const worldPosition = camera.localToWorld(fixedPosition);
-                child.position.copy(worldPosition);
-            }
-        });
-
-        renderer.render(scene, camera);
+        // composer.render();
+        renderer.render( scene, camera )
     }
 }
 
