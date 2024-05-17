@@ -150,7 +150,7 @@ function init() {
     initLight();
     scene.add(lightMesh);
     initSimulator();
-    loadGLBModel();
+    // loadGLBModel();
 
     const defaultLight = new THREE.HemisphereLight( 0xffffff, 0xbbbbff, 3 );
     defaultLight.position.set( 0.5, 1, 0.25 );
