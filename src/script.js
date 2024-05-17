@@ -579,8 +579,8 @@ function render() {
     if (isXR) {
         renderer.setSize(renderer.domElement.width, renderer.domElement.height);
     }
-    // composer.render();
     renderer.render( scene, camera )
+    composer.render();
 }
 
 //#########EVENT LISTENER#############
