@@ -2,8 +2,17 @@ import * as THREE from 'three'
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { ARButton } from 'three/addons/controls/ARButton.js';
+import { ARButton } from 'three/addons/webxr/ARButton.js';
 
+// import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+// import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+// import { TexturePass } from 'three/addons/postprocessing/TexturePass.js';
+// import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+// import { UnrealBloomPass } from 'three/addons/postprocessing/AlphaUnrealBloomPass.js';
+// // import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+// import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+import { BloomEffect, EffectComposer, EffectPass, RenderPass } from "postprocessing";
 
 //settings
 const urlParams = new URLSearchParams(window.location.search);
@@ -12,6 +21,7 @@ const query = {
 };
 
 const amountMap = {
+    '256': [16, 16, 0.1],
     '1k': [32, 32, 0.16],
     '2k': [64, 32, 0.21],
     '4k': [64, 64, 0.29],
@@ -30,14 +40,15 @@ const amountInfo = amountMap[query.amount];
 
 const settings = {
     amount: '2k',
-    speed: 0.6,
-    dieSpeed: 0.003,
-    radius: 3.0,
+    speed: 0.4,
+    dieSpeed: 0.0025,
+    radius: 1.0,
     curlSize: 0.015,
-    attraction: 2.0,
+    attraction: -2.0,
     shadowDarkness: 0.66,
-    color1: '#ff70e0',
-    color2: '#8fff33',
+    tornadoStrength: 3.3,
+    color1: '#ffa8e4',
+    color2: '#efccff',
 };
 
 let camera, simulCamera, scene, simulScene, renderer, controls;
@@ -47,12 +58,12 @@ let dt;
 let ray = new THREE.Ray();
 
 //particles
-let partcleMesh;
+let particleMesh;
 let color1, color2, tmpColor;
 let texture;
 
 //simulator
-let copyShader, positionShader, textureDefaultPosition, positionRenderTarget, positionRenderTarget2;
+let copyShader, positionShader, textureDefaultPosition, positionRenderTarget, positionRenderTarget2, rotationTexture, scaleTexture;
 
 let simulMesh;
 let followPoint;
@@ -68,38 +79,107 @@ let initAnimation = 0;
 let shadowDarkness = 0.45;
 let lightMesh;
 
+//instance
+let glbModel;
+let glbMaterial;
+let rotationSpeeds;
+let colorIndices;
+
+const params = {
+    exposure: 1,
+    strength: 5.0,
+    threshold: 0,
+    radius: 1.0,
+};
+
+let composer, sceneTarget, copyPass, combinePass, bloomComposer;
+let renderTarget;
+
+let onARSession = false;
+
+let size;
+
 init()
 
 function init() {
-
     scene = new THREE.Scene();
 
     camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.1, 10000);
+    // camera.position.set( 0, 0, 30 );
     // camera.position.set(-440, 380, 800);
     camera.position.set( 0, 500, 600 );
-    camera.lookAt(new THREE.Vector3( 0, 0, 0 ))
+
+    // camera.lookAt(new THREE.Vector3( 0, 0, 0 ))
     // settings.camera = camera;
     // settings.cameraPosition = camera.position;
 
     renderer = new THREE.WebGLRenderer({
+        // canvas,
+        // context: renderer.getContext(), 
         antialias : true,
         alpha: true,
+        depth: true,
     });
+    // renderer.debug.checkShaderErrors = false;
+    // renderer.autoClear = false;
+    // renderer.autoClearDepth = false;
+
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.shadowMap.enabled = true;
     renderer.setPixelRatio( window.devicePixelRatio );
     renderer.setSize( window.innerWidth, window.innerHeight );
     renderer.xr.enabled = true;
-    renderer.setClearColor( 0x000000, 1 )
+    renderer.setClearColor( 0x000000, 0.5 )
 
     document.body.appendChild ( renderer.domElement );
     document.body.appendChild( ARButton.createButton( renderer ));
 
+
+
+    //
+    // renderTarget = new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight, {
+    //     format: THREE.RGBAFormat,
+    //     type: THREE.UnsignedByteType,
+    //     depthBuffer: true,
+    //     stencilBuffer: false,
+    // });
+
+    // const renderScene = new RenderPass( scene, camera );
+
+    // const bloomPass = new UnrealBloomPass( new THREE.Vector2( window.innerWidth, window.innerHeight ), 1.5, 0.4, 0.85 );
+    // bloomPass.threshold = params.threshold;
+    // bloomPass.strength = params.strength;
+    // bloomPass.radius = params.radius;
+
+    // const outputPass = new OutputPass();
+
+    // composer = new EffectComposer( renderer, renderTarget );
+    // // composer.addPass( copyPass );
+    // composer.addPass( renderScene )
+    // composer.addPass( bloomPass );
+    // composer.addPass( outputPass );
+
+    composer = new EffectComposer(renderer);
+    composer.addPass(new RenderPass(scene, camera));
+    composer.addPass(new EffectPass(camera, new BloomEffect({
+        intensity: 2.0
+    }))); 
+
+
+    
+    window.addEventListener('resize', function() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        composer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    //
+
     initLight();
     scene.add(lightMesh);
     initSimulator();
-    initParticles();
-    scene.add(partcleMesh);
+    loadGLBModel();
 
     const defaultLight = new THREE.HemisphereLight( 0xffffff, 0xbbbbff, 3 );
     defaultLight.position.set( 0.5, 1, 0.25 );
@@ -117,16 +197,16 @@ function init() {
     scene.add( cube );
 
     const loader = new GLTFLoader();
-    loader.load(
-        'models/scene.glb',
-        function ( gltf ) {
-            let scaleFactor = 100;
-            gltf.scene.position.y = -100;
-            gltf.scene.position.z = 650;
-            gltf.scene.scale.set ( scaleFactor, scaleFactor, scaleFactor);
-            scene.add( gltf.scene );
-        },
-    );
+    // loader.load(
+    //     'models/scene3.glb',
+    //     function ( gltf ) {
+    //         let scaleFactor = 100;
+    //         gltf.scene.position.y = -100;
+    //         gltf.scene.position.z = 650;
+    //         gltf.scene.scale.set ( scaleFactor, scaleFactor, scaleFactor);
+    //         scene.add( gltf.scene );
+    //     },
+    // );
 
     window.addEventListener('keyup', onKeyUp);
 
@@ -138,7 +218,7 @@ function init() {
 
     settings.amount = query.amount;
 
-    gui.add(settings, 'amount', ['1k', '2k', '4k', '8k', '16k', '32k', '65k', '131k', '252k', '524k', '1m', '2m', '4m'])
+    gui.add(settings, 'amount', ['256', '1k', '2k', '4k', '8k', '16k', '32k', '65k', '131k', '252k', '524k', '1m', '2m', '4m'])
     .onChange(function(value) {
         const newUrl = new URL(window.location.href);
         newUrl.searchParams.set('amount', value);
@@ -146,16 +226,36 @@ function init() {
     });
     gui.add( settings, 'speed', 0, 3 );
     gui.add( settings, 'dieSpeed', 0, 0.05 );
-    gui.add( settings, 'radius', 0, 3 );
+    gui.add( settings, 'radius', 0, 10 );
     gui.add( settings, 'curlSize', 0, 0.05 );
     gui.add( settings, 'attraction', -20, 20 );
     gui.add( settings, 'shadowDarkness', 0, 1 );
+    gui.add( settings, 'tornadoStrength', 0.0, 10.0 );
     gui.addColor( settings, 'color1' );
     gui.addColor( settings, 'color2' );
 
-    time = Date.now();
-    renderer.setAnimationLoop( render );
+    // const bloomFolder = gui.addFolder( 'bloom' );
 
+    // bloomFolder.add( params, 'threshold', 0.0, 1.0 ).onChange( function ( value ) {
+    //     bloomPass.threshold = Number( value );
+    // } );
+
+    // bloomFolder.add( params, 'strength', 0.0, 3.0 ).onChange( function ( value ) {
+    //     bloomPass.strength = Number( value );
+    // } );
+
+    // gui.add( params, 'radius', 0.0, 1.0 ).step( 0.01 ).onChange( function ( value ) {
+    //     bloomPass.radius = Number( value );
+    // } );
+
+    // const toneMappingFolder = gui.addFolder( 'tone mapping' );
+    // toneMappingFolder.add( params, 'exposure', 0.1, 2 ).onChange( function ( value ) {
+    //     renderer.toneMappingExposure = Math.pow( value, 4.0 );
+    // } );
+
+    time = Date.now();
+    // renderer.setAnimationLoop( render );
+    animate();
 }
 
 
@@ -188,7 +288,10 @@ function initSimulator() {
             curlSize: { type: 'f', value: 0 },
             attraction: { type: 'f', value: 0 },
             time: { type: 'f', value: 0 },
-            initAnimation: { type: 'f', value: 0 }
+            initAnimation: { type: 'f', value: 0 },
+            // windDirection: { type: 'v3', value: new THREE.Vector3(100, 0.0, 0.0) },
+            tornadoStrength: { type: 'f', value: settings.tornadoStrength },
+
         },
         vertexShader: document.getElementById( 'quadVert' ).textContent,
         fragmentShader: document.getElementById( 'positionFrag' ).textContent,
@@ -215,6 +318,9 @@ function initSimulator() {
     positionRenderTarget2 = positionRenderTarget.clone();
     copyTexture(createPositionTexture(), positionRenderTarget);
     copyTexture(positionRenderTarget, positionRenderTarget2);
+
+    rotationTexture = createRotationTexture();
+    scaleTexture = createScaleTexture();
 }
 
 function copyTexture(input, output) {
@@ -250,10 +356,41 @@ function createPositionTexture() {
     return texture;
 }
 
+function createRotationTexture() {
+    const rotations = new Float32Array(AMOUNT * 4);
+    for (let i = 0; i < AMOUNT; i++) {
+        rotations[i * 4 + 0] = Math.random() * 2.0 * Math.PI;
+        rotations[i * 4 + 1] = Math.random() * 2.0 * Math.PI; 
+        rotations[i * 4 + 2] = Math.random() * 2.0 * Math.PI; 
+        rotations[i * 4 + 3] = Math.random(); 
+    }
+    const texture = new THREE.DataTexture(rotations, TEXTURE_WIDTH, TEXTURE_HEIGHT, THREE.RGBAFormat, THREE.FloatType);
+    texture.needsUpdate = true;
+    texture.generateMipmaps = false;
+    texture.flipY = false;
+    return texture;
+}
+
+function createScaleTexture() {
+    const scales = new Float32Array(AMOUNT * 4);
+    for (let i = 0; i < AMOUNT; i++) {
+        scales[i * 4 + 0] = Math.random() * 0.6 + 1.2; 
+        scales[i * 4 + 1] = 0.0;
+        scales[i * 4 + 2] = 0.0;
+        scales[i * 4 + 3] = 1.0;
+    }
+    const texture = new THREE.DataTexture(scales, TEXTURE_WIDTH, TEXTURE_HEIGHT, THREE.RGBAFormat, THREE.FloatType);
+    texture.needsUpdate = true;
+    texture.generateMipmaps = false;
+    texture.flipY = false;
+    return texture;
+}
+
+
 function updateSimulator(dt) {
     if(settings.speed || settings.dieSpeed) {
-        const r = 500;
-        const h = 10;
+        const r = 300;
+        const h = 30;
         
         let autoClearColor = renderer.autoClearColor;
         renderer.autoClearColor = false;
@@ -266,9 +403,11 @@ function updateSimulator(dt) {
         positionShader.uniforms.curlSize.value = settings.curlSize;
         positionShader.uniforms.attraction.value = settings.attraction;
         positionShader.uniforms.initAnimation.value = initAnimation;
-
+        positionShader.uniforms.tornadoStrength.value = settings.tornadoStrength;
         // positionShader.uniforms.mouse3d.value.copy(settings.mouse3d);
-        followPointTime += dt * 0.001 * settings.speed;
+        // followPointTime += dt * 0.001 * settings.speed;
+        followPointTime += dt * 0.001;
+
         // followPoint.set(
         //     Math.cos(followPointTime) * r,
         //     Math.cos(followPointTime * 4.0) * h,
@@ -276,7 +415,7 @@ function updateSimulator(dt) {
         // );
         followPoint.set(
             Math.cos(followPointTime) * r * 1.2,  // x
-            Math.cos(followPointTime * 1.5) * h,  // y
+            Math.cos(followPointTime * 2.5) * h,  // y
             Math.sin(followPointTime) * r   // z
         );
         positionShader.uniforms.mouse3d.value.lerp(followPoint, 0.2);
@@ -297,7 +436,8 @@ function updatePosition(dt) {
     positionShader.uniforms.textureDefaultPosition.value = textureDefaultPosition;
     positionShader.uniforms.texturePosition.value = positionRenderTarget2.texture;
     positionShader.uniforms.time.value += dt * 0.001;
-    
+    // positionShader.uniforms.windDirection.value.set(100, 0.0, 0.0);
+
     var currentRenderTarget = renderer.getRenderTarget();
     var currentXrEnabled = renderer.xr.enabled;
     var currentShadowAutoUpdate = renderer.shadowMap.autoUpdate;
@@ -315,114 +455,61 @@ function updatePosition(dt) {
 }
 
 //##########PARTICLES#############
-function initParticles() {
-
-    tmpColor = new THREE.Color();
-    color1 = new THREE.Color(settings.color1);
-    color2 = new THREE.Color(settings.color2);
-    partcleMesh = createParticleMesh();
-    partcleMesh.visible = false;
-
+function loadGLBModel() {
+    const loader = new GLTFLoader();
+    loader.load('../src/models/flower2.glb', function(gltf) {
+        glbModel = gltf.scene.children[0];
+        glbMaterial = glbModel.material;
+        initParticles(); 
+        scene.add(particleMesh);
+    });
 }
 
-function getRandomAdjacentColor(hex, range = 0.3) {
-    let r = parseInt(hex.slice(1, 3), 16) / 255;
-    let g = parseInt(hex.slice(3, 5), 16) / 255;
-    let b = parseInt(hex.slice(5, 7), 16) / 255;
-
-    r = Math.min(1, Math.max(0, r + (Math.random() * range - range / 2)));
-    g = Math.min(1, Math.max(0, g + (Math.random() * range - range / 2)));
-    b = Math.min(1, Math.max(0, b + (Math.random() * range - range / 2)));
-
-    return new Float32Array([r, g, b]);
+//##########입자#############
+function initParticles() {
+    if (!glbModel) {
+        console.error("GLB 모델이 로드되지 않았습니다.");
+        return;
+    }
+    particleMesh = createParticleMesh();
 }
 
 function createParticleMesh() {
-    var position = new Float32Array(AMOUNT * 3);
-    var ranRotation = new Float32Array(AMOUNT);
-    var ranColor1 = new Float32Array(AMOUNT * 3);
-    var ranColor2 = new Float32Array(AMOUNT * 3);
-    
-    var i3;
-    for(var i = 0; i < AMOUNT; i++ ) {
-        i3 = i * 3;
-        position[i3 + 0] = (i % TEXTURE_WIDTH) / TEXTURE_WIDTH;
-        position[i3 + 1] = ~~(i / TEXTURE_WIDTH) / TEXTURE_HEIGHT;
-
-        ranRotation[i] = Math.random() * 360.0;
-
-        var ranColor1Obj = getRandomAdjacentColor(settings.color1);
-
-        ranColor1[i3 + 0] = ranColor1Obj[0];  // R
-        ranColor1[i3 + 1] = ranColor1Obj[1];  // G
-        ranColor1[i3 + 2] = ranColor1Obj[2];  // B
-
-        var ranColor2Obj = getRandomAdjacentColor(settings.color2);
-
-        ranColor2[i3 + 0] = ranColor2Obj[0];  // R
-        ranColor2[i3 + 1] = ranColor2Obj[1];  // G
-        ranColor2[i3 + 2] = ranColor2Obj[2];  // B
-    }
-
-    var geometry = new THREE.BufferGeometry();
-    geometry.setAttribute( 'position', new THREE.BufferAttribute( position, 3 ));
-    geometry.setAttribute( 'ranRotation', new THREE.BufferAttribute(ranRotation, 1))
-    geometry.setAttribute( 'ranColor1', new THREE.BufferAttribute(ranColor1, 3))
-    geometry.setAttribute( 'ranColor2', new THREE.BufferAttribute(ranColor2, 3))
-
-    var material = new THREE.ShaderMaterial({
-        uniforms: THREE.UniformsUtils.merge([
-            THREE.UniformsLib.shadowmap,
-            {
-                texturePosition: { type: 't', value: null },
-                particleTexture: { type: 't', value: texture },
-                color1: { type: 'c', value: null },
-                color2: { type: 'c', value: null },
-            }
-        ]),
-        vertexShader: document.getElementById( 'particlesVert' ).textContent,
-        fragmentShader: document.getElementById( 'particlesFrag' ).textContent,
-        blending: THREE.NoBlending
-    });
-    material.uniforms.color1.value = color1;
-    material.uniforms.color2.value = color2;
-
-
-    var paticlesMesh = new THREE.Points( geometry, material );
-
-    paticlesMesh.customDistanceMaterial = new THREE.ShaderMaterial( {
+    const geometry = glbModel.geometry;
+    const material = new THREE.ShaderMaterial({
+        vertexShader: document.getElementById('vertexShader').textContent,
+        fragmentShader: document.getElementById('fragmentShader').textContent,
         uniforms: {
-            lightPos: { type: 'v3', value: new THREE.Vector3( 0, 0, 0 ) },
-            texturePosition: { type: 't', value: null },
-            particleTexture: { type: 't', value: texture },
+            resolution: { type: 'v2', value: new THREE.Vector2( TEXTURE_WIDTH, TEXTURE_HEIGHT ) },
+            texturePosition: { value: positionRenderTarget.texture },
+            textureRotation: { value: rotationTexture },
+            textureScale: { value: scaleTexture }, 
+            time: { value: 0.0 },
+            color1: { value: new THREE.Color(settings.color1) }, 
+            color2: { value: new THREE.Color(settings.color2) },
+            lightPosition: { value: new THREE.Vector3(10, 10, 10) },
+            ambientLightIntensity: { value: 2.0 },
+            metalness: { value: 0.0 },
+            roughness: { value: 1.0 }, 
         },
-        vertexShader: document.getElementById( 'particlesDistanceVert' ).textContent,
-        fragmentShader: document.getElementById( 'particlesDistanceFrag' ).textContent,
-        depthTest: true,
-        depthWrite: true,
-        side: THREE.BackSide,
-        blending: THREE.NoBlending
+        transparent: true,
     });
+    const mesh = new THREE.InstancedMesh(geometry, material, AMOUNT);
+    mesh.receiveShadow = true;
 
-    paticlesMesh.castShadow = true;
-    paticlesMesh.receiveShadow = true;
+    colorIndices = new Float32Array(AMOUNT); 
 
-    return paticlesMesh;
+    geometry.setAttribute('colorIndex', new THREE.InstancedBufferAttribute(colorIndices, 1));
+    
+    return mesh;
 }
 
-function updateParticles() {
-    var mesh;
-    partcleMesh.visible = true;
+function updateParticles(dt) {
+    if (!particleMesh) return;
 
-    tmpColor.setStyle(settings.color1);
-    color1.lerp(tmpColor, 0.05);
-
-    tmpColor.setStyle(settings.color2);
-    color2.lerp(tmpColor, 0.05);
-
-    mesh = partcleMesh;
-    mesh.material.uniforms.texturePosition.value = positionRenderTarget.texture;
-    mesh.customDistanceMaterial.uniforms.texturePosition.value = positionRenderTarget.texture;
+    particleMesh.material.uniforms.texturePosition.value = positionRenderTarget.texture;
+    particleMesh.material.uniforms.time.value += dt * 0.01;;
+    particleMesh.material.uniformsNeedUpdate = true;
 }
 
 //##########LIGHT##########
@@ -455,21 +542,45 @@ function initLight() {
 }
 
 //###########ANIMATION##############
-function render(frame) {
-    if (frame) {
-        controls.update();
-        let newTime = Date.now();
-        dt = newTime - time;
-        time = newTime;
+// function render(frame) {
+//     if (frame) {
+//         controls.update();
+//         let newTime = Date.now();
+//         dt = newTime - time;
+//         time = newTime;
 
-        initAnimation = Math.min(initAnimation + dt * 0.00025, 1);
-        // lightUpdate(dt, camera);
-        updateSimulator(dt);
-        updateParticles();
-        renderer.render(scene, camera);
-    }
+//         initAnimation = Math.min(initAnimation + dt * 0.00025, 1);
+//         // lightUpdate(dt, camera);
+//         updateSimulator(dt);
+//         updateParticles(dt);
+
+//         composer.render();
+//     }
+// }
+
+function animate() {
+    renderer.setAnimationLoop( render );
 }
+  
+function render() {
+    controls.update();
+    let newTime = Date.now();
+    dt = newTime - time;
+    time = newTime;
 
+    initAnimation = Math.min(initAnimation + dt * 0.00025, 1);
+    // lightUpdate(dt, camera);
+    updateSimulator(dt);
+    updateParticles(dt);
+
+    const session = renderer.xr.getSession();
+    const isXR = session !== null;
+
+    if (isXR) {
+        renderer.setSize(renderer.domElement.width, renderer.domElement.height);
+    }
+    composer.render();
+}
 
 //#########EVENT LISTENER#############
 function onKeyUp(evt) {
@@ -478,3 +589,11 @@ function onKeyUp(evt) {
         settings.dieSpeed = settings.dieSpeed === 0 ? 0.003 : 0;
     }
 }
+
+renderer.xr.addEventListener( 'sessionstart', function ( event ) {
+    console.log('onAR')
+} );
+
+renderer.xr.addEventListener( 'sessionend', function ( event ) {
+    console.log('offAR')
+} );

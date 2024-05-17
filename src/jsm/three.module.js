@@ -28692,12 +28692,12 @@ class WebGLRenderer {
 
 		this.setSize = function ( width, height, updateStyle = true ) {
 
-			if ( xr.isPresenting ) {
+			// if ( xr.isPresenting ) {
 
-				console.warn( 'THREE.WebGLRenderer: Can\'t change size while VR device is presenting.' );
-				return;
+			// 	console.warn( 'THREE.WebGLRenderer: Can\'t change size while VR device is presenting.' );
+			// 	return;
 
-			}
+			// }
 
 			_width = width;
 			_height = height;
