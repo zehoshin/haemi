@@ -1120,18 +1120,22 @@ var EffectComposer = class {
         }
       }
     }
-    renderer.xr.enabled = false;
 
-    renderer.xr.updateCamera(camera);
 
     const session = renderer.xr.getSession();
     if (session) {
       const layer = session.renderState.baseLayer;
-      const gl = renderer.getContext();
-      gl.bindFramebuffer(gl.FRAMEBUFFER, layer.framebuffer);
+      if (layer) {
+        const gl = renderer.getContext();
+        gl.bindFramebuffer(gl.FRAMEBUFFER, layer.framebuffer);
+      }
     } else {
       renderer.setRenderTarget(null);
     }
+    
+    renderer.xr.enabled = false;
+
+    renderer.xr.updateCamera(camera);
 
     const { cameras } = renderer.xr.getCamera();
     cameras.forEach(({ viewport, matrixWorld, projectionMatrix }) => {
