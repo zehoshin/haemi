@@ -457,7 +457,7 @@ function updatePosition(dt) {
 //##########PARTICLES#############
 function loadGLBModel() {
     const loader = new GLTFLoader();
-    loader.load('../src/models/flower2.glb', function(gltf) {
+    loader.load('./src/models/flower2.glb', function(gltf) {
         glbModel = gltf.scene.children[0];
         glbMaterial = glbModel.material;
         initParticles(); 
