@@ -1121,19 +1121,8 @@ var EffectComposer = class {
       }
     }
 
-    renderer.xr.enabled = false;
-
-    const session = renderer.xr.getSession();
-    if (session) {
-      const layer = session.renderState.baseLayer;
-      if (layer) {
-        const gl = renderer.getContext();
-        gl.bindFramebuffer(gl.FRAMEBUFFER, layer.framebuffer);
-      }
-    } else {
-      renderer.setRenderTarget(null);
-    }
     
+    renderer.xr.enabled = false;
 
     renderer.xr.updateCamera(camera);
 
@@ -1143,7 +1132,19 @@ var EffectComposer = class {
         camera.position.setFromMatrixPosition(matrixWorld);
         camera.projectionMatrix.copy(projectionMatrix);
 
-        renderer.render(scene, camera);
+        const session = renderer.xr.getSession();
+        if (session) {
+          const layer = session.renderState.baseLayer;
+          if (layer) {
+            const gl = renderer.getContext();
+            gl.bindFramebuffer(gl.FRAMEBUFFER, layer.framebuffer);
+            renderer.render(scene, camera);
+
+          }
+        } else {
+          renderer.setRenderTarget(null);
+        }
+
     });
 
     renderer.setRenderTarget(null);
