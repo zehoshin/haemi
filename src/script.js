@@ -502,33 +502,30 @@ function render() {
     const session = renderer.xr.getSession();
     const isXR = session !== null;
 
-    // if (isXR) {
-    // composer.render();
-    // } else {
-    //     renderer.render( scene, camera )
-    // }
-    // // renderer.render( scene, camera )
-    // //
-    // renderer.xr.enabled = false;
+    if (isXR) {
+        renderer.xr.updateCamera(camera);
 
-    // // Update camera with XRPose
-    // renderer.xr.updateCamera(camera);
+        const xrCameras = renderer.xr.getCamera(camera);
+        xrCameras.cameras.forEach((xrCamera) => {
+            // Set the viewport for each XR camera
+            const viewport = xrCamera.viewport;
+            renderer.setViewport(viewport.x, viewport.y, viewport.width, viewport.height);
 
-    // // Render stereo cameras
-    // const { cameras } = renderer.xr.getCamera();
-    // cameras.forEach(({ viewport, matrixWorld, projectionMatrix }) => {
-    //     renderer.setViewport(viewport);
-    //   camera.position.setFromMatrixPosition(matrixWorld);
-    //   camera.projectionMatrix.copy(projectionMatrix);
+            // Update the main camera with the XR camera properties
+            camera.matrixWorld.copy(xrCamera.matrixWorld);
+            camera.projectionMatrix.copy(xrCamera.projectionMatrix);
 
-      composer.render( scene, camera );
-    // });
+            // Render the scene using EffectComposer
+            composer.render(scene, camera);
+        });
+        renderer.setViewport(0, 0, renderer.domElement.width, renderer.domElement.height);
+    } else {
+        composer.render(scene, camera);
+    }
 
-    // // Reset
-    // renderer.clear();
-    // renderer.xr.updateCamera(camera);
-    // renderer.xr.enabled = true;
-    // //
+    renderer.clearDepth();
+    renderer.xr.enabled = true;
+    renderer.setAnimationLoop(render);
 }
 
 //#########EVENT LISTENER#############
