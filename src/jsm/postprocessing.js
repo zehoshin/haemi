@@ -1128,11 +1128,9 @@ var EffectComposer = class {
       if (layer) {
         const gl = renderer.getContext();
         gl.bindFramebuffer(gl.FRAMEBUFFER, layer.framebuffer);
-
       }
     } else {
       renderer.setRenderTarget(null);
-
     }
     
     renderer.xr.enabled = false;

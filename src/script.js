@@ -127,7 +127,7 @@ function init() {
     composer = new EffectComposer(renderer);
     composer.addPass(new RenderPass(scene, camera));
     composer.addPass(new EffectPass(camera, new BloomEffect({
-        intensity: 2.0
+        intensity: 1.0
     }))); 
 
     window.addEventListener('resize', function() {
@@ -541,6 +541,8 @@ function onKeyUp(evt) {
 
 renderer.xr.addEventListener( 'sessionstart', function ( event ) {
     console.log('onAR')
+    const session = event.target;
+    session.updateRenderState({ baseLayer: new XRWebGLLayer(session, renderer.getContext()) });
 } );
 
 renderer.xr.addEventListener( 'sessionend', function ( event ) {
