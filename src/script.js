@@ -119,7 +119,7 @@ function init() {
     renderer.setPixelRatio( window.devicePixelRatio );
     renderer.setSize( window.innerWidth, window.innerHeight );
     renderer.xr.enabled = true;
-    // renderer.setClearColor( 0x000000, 0.9 )
+    renderer.setClearColor( 0x000000, 1.0 )
 
     document.body.appendChild ( renderer.domElement );
     document.body.appendChild( ARButton.createButton( renderer ));
@@ -499,8 +499,34 @@ function render() {
     updateSimulator(dt);
     updateParticles(dt);
 
+    const session = renderer.xr.getSession();
+    const isXR = session !== null;
+
+    // if (isXR) {
     composer.render();
-    renderer.render( scene, camera )
+    // } else {
+    //     renderer.render( scene, camera )
+    // }
+    // // renderer.render( scene, camera )
+    renderer.xr.enabled = false;
+
+    // Update camera with XRPose
+    renderer.xr.updateCamera(camera);
+
+    // Render stereo cameras
+    const { cameras } = renderer.xr.getCamera();
+    cameras.forEach(({ viewport, matrixWorld, projectionMatrix }) => {
+        renderer.setViewport(viewport);
+      camera.position.setFromMatrixPosition(matrixWorld);
+      camera.projectionMatrix.copy(projectionMatrix);
+
+      composer.render();
+    });
+
+    // Reset
+    // renderer.setViewport(0, 0, width, height);
+    renderer.xr.updateCamera(camera);
+    renderer.xr.enabled = true;
 }
 
 //#########EVENT LISTENER#############
