@@ -119,7 +119,7 @@ function init() {
     renderer.setPixelRatio( window.devicePixelRatio );
     renderer.setSize( window.innerWidth, window.innerHeight );
     renderer.xr.enabled = true;
-    renderer.setClearColor( 0x000000, 1.0 )
+    // renderer.setClearColor( 0x000000, 1.0 )
 
     document.body.appendChild ( renderer.domElement );
     document.body.appendChild( ARButton.createButton( renderer ));
@@ -503,30 +503,32 @@ function render() {
     const isXR = session !== null;
 
     // if (isXR) {
-    composer.render();
+    // composer.render();
     // } else {
     //     renderer.render( scene, camera )
     // }
     // // renderer.render( scene, camera )
-    renderer.xr.enabled = false;
+    // //
+    // renderer.xr.enabled = false;
 
-    // Update camera with XRPose
-    renderer.xr.updateCamera(camera);
+    // // Update camera with XRPose
+    // renderer.xr.updateCamera(camera);
 
-    // Render stereo cameras
-    const { cameras } = renderer.xr.getCamera();
-    cameras.forEach(({ viewport, matrixWorld, projectionMatrix }) => {
-        renderer.setViewport(viewport);
-      camera.position.setFromMatrixPosition(matrixWorld);
-      camera.projectionMatrix.copy(projectionMatrix);
+    // // Render stereo cameras
+    // const { cameras } = renderer.xr.getCamera();
+    // cameras.forEach(({ viewport, matrixWorld, projectionMatrix }) => {
+    //     renderer.setViewport(viewport);
+    //   camera.position.setFromMatrixPosition(matrixWorld);
+    //   camera.projectionMatrix.copy(projectionMatrix);
 
-      composer.render();
-    });
+      composer.render( scene, camera );
+    // });
 
-    // Reset
-    // renderer.setViewport(0, 0, width, height);
-    renderer.xr.updateCamera(camera);
-    renderer.xr.enabled = true;
+    // // Reset
+    // renderer.clear();
+    // renderer.xr.updateCamera(camera);
+    // renderer.xr.enabled = true;
+    // //
 }
 
 //#########EVENT LISTENER#############

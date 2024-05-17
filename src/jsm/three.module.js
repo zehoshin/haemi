@@ -29460,8 +29460,7 @@ class WebGLRenderer {
 
 			}
 
-			// const renderBackground = xr.enabled === false || xr.isPresenting === false || xr.hasDepthSensing() === false;
-			const renderBackground = true;
+			const renderBackground = xr.enabled === false || xr.isPresenting === false || xr.hasDepthSensing() === false;
 			if ( renderBackground ) {
 
 				background.addToRenderList( currentRenderList, scene );

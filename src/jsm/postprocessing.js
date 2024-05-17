@@ -1086,7 +1086,7 @@ var EffectComposer = class {
    *
    * @param {Number} [deltaTime] - The time since the last frame in seconds.
    */
-  render(deltaTime) {
+  render(scene, camera, deltaTime) {
     const renderer = this.renderer;
     const copyPass = this.copyPass;
     let inputBuffer = this.inputBuffer;
@@ -1120,6 +1120,25 @@ var EffectComposer = class {
         }
       }
     }
+    renderer.xr.enabled = false;
+
+    // Update camera with XRPose
+    renderer.xr.updateCamera(camera);
+
+    // Render stereo cameras
+    const { cameras } = renderer.xr.getCamera();
+    cameras.forEach(({ viewport, matrixWorld, projectionMatrix }) => {
+        renderer.setViewport(viewport);
+        camera.position.setFromMatrixPosition(matrixWorld);
+      camera.projectionMatrix.copy(projectionMatrix);
+
+      renderer.render(scene, camera);
+    });
+
+    // Reset
+    renderer.clear();
+    renderer.xr.updateCamera(camera);
+    renderer.xr.enabled = true;
   }
   /**
    * Sets the size of the buffers, passes and the renderer.
