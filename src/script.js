@@ -520,9 +520,8 @@ function render() {
     //     renderer.setViewport(viewport);
     //   camera.position.setFromMatrixPosition(matrixWorld);
     //   camera.projectionMatrix.copy(projectionMatrix);
-
-      composer.render( scene, camera );
-      renderer.render( scene, camera )
+    renderer.render( scene, camera )
+    composer.render( scene, camera );
     // });
 
     // // Reset
