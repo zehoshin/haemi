@@ -1122,10 +1122,17 @@ var EffectComposer = class {
     }
     renderer.xr.enabled = false;
 
-    // Update camera with XRPose
     renderer.xr.updateCamera(camera);
 
-    // Render stereo cameras
+    const session = renderer.xr.getSession();
+    if (session) {
+      const layer = session.renderState.baseLayer;
+      const gl = renderer.getContext();
+      gl.bindFramebuffer(gl.FRAMEBUFFER, layer.framebuffer);
+    } else {
+      renderer.setRenderTarget(null);
+    }
+
     const { cameras } = renderer.xr.getCamera();
     cameras.forEach(({ viewport, matrixWorld, projectionMatrix }) => {
         renderer.setViewport(viewport);
@@ -1135,8 +1142,8 @@ var EffectComposer = class {
       renderer.render(scene, camera);
     });
 
-    // Reset
-    renderer.clear();
+    renderer.setRenderTarget(null);
+    // renderer.clear();
     renderer.xr.updateCamera(camera);
     renderer.xr.enabled = true;
   }
