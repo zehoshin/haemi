@@ -541,7 +541,7 @@ function onKeyUp(evt) {
 
 renderer.xr.addEventListener( 'sessionstart', function ( event ) {
     console.log('onAR')
-    const session = event.target;
+    const session = renderer.xr.getSession();
     const gl = renderer.getContext();
     session.updateRenderState({ baseLayer: new XRWebGLLayer(session, gl) });
 } );
