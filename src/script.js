@@ -119,7 +119,7 @@ function init() {
     renderer.setPixelRatio( window.devicePixelRatio );
     renderer.setSize( window.innerWidth, window.innerHeight );
     renderer.xr.enabled = true;
-    // renderer.setClearColor( 0x000000, 1.0 )
+    renderer.setClearColor( 0x000000, 1.0 )
 
     document.body.appendChild ( renderer.domElement );
     document.body.appendChild( ARButton.createButton( renderer ));
@@ -522,6 +522,7 @@ function render() {
     //   camera.projectionMatrix.copy(projectionMatrix);
 
       composer.render( scene, camera );
+      renderer.render( scene, camera )
     // });
 
     // // Reset
