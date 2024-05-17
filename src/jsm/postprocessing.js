@@ -1122,7 +1122,6 @@ var EffectComposer = class {
     }
 
     
-    renderer.xr.enabled = false;
 
     renderer.xr.updateCamera(camera);
 
@@ -1139,7 +1138,6 @@ var EffectComposer = class {
             const gl = renderer.getContext();
             gl.bindFramebuffer(gl.FRAMEBUFFER, layer.framebuffer);
             renderer.render(scene, camera);
-
           }
         } else {
           renderer.setRenderTarget(null);
@@ -1150,7 +1148,6 @@ var EffectComposer = class {
     renderer.setRenderTarget(null);
     // renderer.clear();
     renderer.xr.updateCamera(camera);
-    renderer.xr.enabled = true;
   }
   /**
    * Sets the size of the buffers, passes and the renderer.

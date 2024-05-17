@@ -4,7 +4,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { ARButton } from 'three/addons/webxr/ARButton.js';
 
-import { BloomEffect, EffectComposer, EffectPass, RenderPass } from "postprocessing";
+// import { BloomEffect, EffectComposer, EffectPass, RenderPass } from "postprocessing";
+import { FakeGlowMaterial } from 'three/addons/materials/FakeGlowMaterial.js';
 
 //settings
 const urlParams = new URLSearchParams(window.location.search);
@@ -95,6 +96,7 @@ init()
 
 function init() {
     scene = new THREE.Scene();
+    scene.background = new THREE.Color( 0x000000 );
 
     camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.1, 10000);
     // camera.position.set( 0, 0, 30 );
@@ -124,25 +126,31 @@ function init() {
     document.body.appendChild ( renderer.domElement );
     document.body.appendChild( ARButton.createButton( renderer ));
 
-    composer = new EffectComposer(renderer);
-    composer.addPass(new RenderPass(scene, camera));
-    composer.addPass(new EffectPass(camera, new BloomEffect({
-        intensity: 1.0
-    }))); 
+    // composer = new EffectComposer(renderer);
+    // composer.addPass(new RenderPass(scene, camera));
+    // composer.addPass(new EffectPass(camera, new BloomEffect({
+    //     intensity: 1.0
+    // }))); 
 
-    window.addEventListener('resize', function() {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        composer.setSize(window.innerWidth, window.innerHeight);
-    });
+    // window.addEventListener('resize', function() {
+    //     camera.aspect = window.innerWidth / window.innerHeight;
+    //     camera.updateProjectionMatrix();
+    //     renderer.setSize(window.innerWidth, window.innerHeight);
+    //     composer.setSize(window.innerWidth, window.innerHeight);
+    // });
 
     //
+    const geometry1 = new THREE.SphereGeometry();
+    const FakeGlowMaterial1 = new FakeGlowMaterial();
+    const Sphere = new THREE.Mesh(geometry1, FakeGlowMaterial1);
+    Sphere.scale.set(1,1,1)
+    Sphere.position.z = -10;
+    scene.add(Sphere);
 
     initLight();
     scene.add(lightMesh);
     initSimulator();
-    loadGLBModel();
+    // loadGLBModel();
 
     const defaultLight = new THREE.HemisphereLight( 0xffffff, 0xbbbbff, 3 );
     defaultLight.position.set( 0.5, 1, 0.25 );
@@ -157,7 +165,7 @@ function init() {
     const cube = new THREE.Mesh( geometry, material );
     cube.position.z = -2;
     cube.receiveShadow = true;
-    scene.add( cube );
+    // scene.add( cube );
 
     const loader = new GLTFLoader();
     // loader.load(
@@ -499,8 +507,8 @@ function render() {
     updateSimulator(dt);
     updateParticles(dt);
 
-    const session = renderer.xr.getSession();
-    const isXR = session !== null;
+    // const session = renderer.xr.getSession();
+    // const isXR = session !== null;
 
     // if (isXR) {
     // composer.render();
@@ -520,8 +528,8 @@ function render() {
     //     renderer.setViewport(viewport);
     //   camera.position.setFromMatrixPosition(matrixWorld);
     //   camera.projectionMatrix.copy(projectionMatrix);
-    // renderer.render( scene, camera )
-    composer.render( scene, camera );
+    renderer.render( scene, camera )
+    // composer.render( scene, camera );
     // });
 
     // // Reset
