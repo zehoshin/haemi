@@ -1121,6 +1121,7 @@ var EffectComposer = class {
       }
     }
 
+    renderer.xr.enabled = false;
 
     const session = renderer.xr.getSession();
     if (session) {
@@ -1133,7 +1134,6 @@ var EffectComposer = class {
       renderer.setRenderTarget(null);
     }
     
-    renderer.xr.enabled = false;
 
     renderer.xr.updateCamera(camera);
 
