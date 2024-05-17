@@ -1132,24 +1132,9 @@ var EffectComposer = class {
     } else {
       renderer.setRenderTarget(null);
     }
-    
-    renderer.xr.enabled = false;
-
-    renderer.xr.updateCamera(camera);
-
-    const { cameras } = renderer.xr.getCamera();
-    cameras.forEach(({ viewport, matrixWorld, projectionMatrix }) => {
-        renderer.setViewport(viewport);
-        camera.position.setFromMatrixPosition(matrixWorld);
-      camera.projectionMatrix.copy(projectionMatrix);
 
       renderer.render(scene, camera);
-    });
 
-    renderer.setRenderTarget(null);
-    // renderer.clear();
-    renderer.xr.updateCamera(camera);
-    renderer.xr.enabled = true;
   }
   /**
    * Sets the size of the buffers, passes and the renderer.
