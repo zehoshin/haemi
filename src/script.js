@@ -499,8 +499,8 @@ function render() {
     updateSimulator(dt);
     updateParticles(dt);
 
-    const session = renderer.xr.getSession();
-    const isXR = session !== null;
+    // const session = renderer.xr.getSession();
+    // const isXR = session !== null;
 
     // if (isXR) {
     // composer.render();
@@ -520,8 +520,16 @@ function render() {
     //     renderer.setViewport(viewport);
     //   camera.position.setFromMatrixPosition(matrixWorld);
     //   camera.projectionMatrix.copy(projectionMatrix);
-    renderer.render( scene, camera )
-    composer.render( scene, camera );
+    const session = renderer.xr.getSession();
+    if (session) {
+      const layer = session.renderState.baseLayer;
+      if (layer) {
+        const gl = renderer.getContext();
+        gl.bindFramebuffer(gl.FRAMEBUFFER, layer.framebuffer);
+      }
+    }
+  
+    composer.render(scene, camera);
     // });
 
     // // Reset
