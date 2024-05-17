@@ -4,14 +4,6 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { ARButton } from 'three/addons/webxr/ARButton.js';
 
-// import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-// import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
-// import { TexturePass } from 'three/addons/postprocessing/TexturePass.js';
-// import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
-// import { UnrealBloomPass } from 'three/addons/postprocessing/AlphaUnrealBloomPass.js';
-// // import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-// import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
-
 import { BloomEffect, EffectComposer, EffectPass, RenderPass } from "postprocessing";
 
 //settings
@@ -114,50 +106,23 @@ function init() {
     // settings.cameraPosition = camera.position;
 
     renderer = new THREE.WebGLRenderer({
-        // canvas,
-        // context: renderer.getContext(), 
         antialias : true,
         alpha: true,
         depth: true,
     });
-    // renderer.debug.checkShaderErrors = false;
-    // renderer.autoClear = false;
-    // renderer.autoClearDepth = false;
+    renderer.debug.checkShaderErrors = false;
+    renderer.autoClear = false;
+    renderer.autoClearDepth = false;
 
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.shadowMap.enabled = true;
     renderer.setPixelRatio( window.devicePixelRatio );
     renderer.setSize( window.innerWidth, window.innerHeight );
     renderer.xr.enabled = true;
-    renderer.setClearColor( 0x000000, 0.5 )
+    // renderer.setClearColor( 0x000000, 0.9 )
 
     document.body.appendChild ( renderer.domElement );
     document.body.appendChild( ARButton.createButton( renderer ));
-
-
-
-    //
-    // renderTarget = new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight, {
-    //     format: THREE.RGBAFormat,
-    //     type: THREE.UnsignedByteType,
-    //     depthBuffer: true,
-    //     stencilBuffer: false,
-    // });
-
-    // const renderScene = new RenderPass( scene, camera );
-
-    // const bloomPass = new UnrealBloomPass( new THREE.Vector2( window.innerWidth, window.innerHeight ), 1.5, 0.4, 0.85 );
-    // bloomPass.threshold = params.threshold;
-    // bloomPass.strength = params.strength;
-    // bloomPass.radius = params.radius;
-
-    // const outputPass = new OutputPass();
-
-    // composer = new EffectComposer( renderer, renderTarget );
-    // // composer.addPass( copyPass );
-    // composer.addPass( renderScene )
-    // composer.addPass( bloomPass );
-    // composer.addPass( outputPass );
 
     composer = new EffectComposer(renderer);
     composer.addPass(new RenderPass(scene, camera));
@@ -165,8 +130,6 @@ function init() {
         intensity: 2.0
     }))); 
 
-
-    
     window.addEventListener('resize', function() {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
@@ -234,27 +197,7 @@ function init() {
     gui.addColor( settings, 'color1' );
     gui.addColor( settings, 'color2' );
 
-    // const bloomFolder = gui.addFolder( 'bloom' );
-
-    // bloomFolder.add( params, 'threshold', 0.0, 1.0 ).onChange( function ( value ) {
-    //     bloomPass.threshold = Number( value );
-    // } );
-
-    // bloomFolder.add( params, 'strength', 0.0, 3.0 ).onChange( function ( value ) {
-    //     bloomPass.strength = Number( value );
-    // } );
-
-    // gui.add( params, 'radius', 0.0, 1.0 ).step( 0.01 ).onChange( function ( value ) {
-    //     bloomPass.radius = Number( value );
-    // } );
-
-    // const toneMappingFolder = gui.addFolder( 'tone mapping' );
-    // toneMappingFolder.add( params, 'exposure', 0.1, 2 ).onChange( function ( value ) {
-    //     renderer.toneMappingExposure = Math.pow( value, 4.0 );
-    // } );
-
     time = Date.now();
-    // renderer.setAnimationLoop( render );
     animate();
 }
 
@@ -541,23 +484,6 @@ function initLight() {
 
 }
 
-//###########ANIMATION##############
-// function render(frame) {
-//     if (frame) {
-//         controls.update();
-//         let newTime = Date.now();
-//         dt = newTime - time;
-//         time = newTime;
-
-//         initAnimation = Math.min(initAnimation + dt * 0.00025, 1);
-//         // lightUpdate(dt, camera);
-//         updateSimulator(dt);
-//         updateParticles(dt);
-
-//         composer.render();
-//     }
-// }
-
 function animate() {
     renderer.setAnimationLoop( render );
 }
@@ -573,14 +499,8 @@ function render() {
     updateSimulator(dt);
     updateParticles(dt);
 
-    const session = renderer.xr.getSession();
-    const isXR = session !== null;
-
-    if (isXR) {
-        renderer.setSize(renderer.domElement.width, renderer.domElement.height);
-    }
-    renderer.render( scene, camera )
     composer.render();
+    renderer.render( scene, camera )
 }
 
 //#########EVENT LISTENER#############
