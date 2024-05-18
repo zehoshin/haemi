@@ -149,9 +149,10 @@ function init() {
             reticle.matrix.decompose(position, quaternion, scale);
     
             // particleMesh의 위치, 회전, 스케일을 reticle의 값으로 설정
+            // particleMesh.position.set(0,0,-10)
             particleMesh.position.copy(position);
-            particleMesh.quaternion.copy(quaternion);
-            particleMesh.scale.copy(scale);
+            // particleMesh.quaternion.copy(quaternion);
+            // particleMesh.scale.copy(scale);
             scene.add( particleMesh );
         }
     }
@@ -438,11 +439,11 @@ function loadGLBModel() {
         glbModel = gltf.scene.children[0];
         glbMaterial = glbModel.material;
         initParticles(); 
-        // particleMesh.position.set(0,0,0)
+        particleMesh.position.set(0,0,0)
         const scaleFator = 0.011
         particleMesh.scale.set(scaleFator, scaleFator, scaleFator)
 
-        // scene.add(particleMesh);
+        scene.add(particleMesh);
     });
 }
 
@@ -537,16 +538,17 @@ function animate() {
 }
   
 function render(timestamp, frame) {
+    controls.update();
+    let newTime = Date.now();
+    dt = newTime - time;
+    time = newTime;
+
+    initAnimation = Math.min(initAnimation + dt * 0.00025, 1);
+    // lightUpdate(dt, camera);
+    updateSimulator(dt);
+    updateParticles(dt);
+
     if ( frame ) {
-        controls.update();
-        let newTime = Date.now();
-        dt = newTime - time;
-        time = newTime;
-    
-        initAnimation = Math.min(initAnimation + dt * 0.00025, 1);
-        // lightUpdate(dt, camera);
-        updateSimulator(dt);
-        updateParticles(dt);
 
         const referenceSpace = renderer.xr.getReferenceSpace();
         const session = renderer.xr.getSession();
