@@ -272,10 +272,14 @@
 				vNormal = normalize(normalMatrix * normal);
 		
 				vec2 uv = vec2(gl_InstanceID % int(resolution.x), gl_InstanceID / int(resolution.x)) / resolution;
-				vec3 positionOffset = texture2D(texturePosition, uv).xyz;
+				vec4 positionInfo = texture2D(texturePosition, uv);
+				vec3 positionOffset = positionInfo.xyz;
 				vec3 rotationAngles = texture2D(textureRotation, uv).xyz;
 				float scale = texture2D(textureScale, uv).r; 
-		
+
+				//float life = positionInfo.a * 0.5;
+				//float scale = baseScale * smoothstep(0.0, 0.5, life);
+
 				vec3 timeRotation = rotationAngles + time * vec3(0.1, 0.2, 0.3); // Adjust these values for different rotation speeds
 				mat3 rotationMat = rotationMatrix(timeRotation);
 				vec3 rotatedPosition = rotationMat * position * scale;
@@ -324,7 +328,6 @@
 				vec3 diffuse = kD * color * lightIntensity;
 				vec3 specular = F * NDF * G / (4.0 * max(dot(vNormal, lightDir), 0.0) * max(dot(vNormal, viewDir), 0.0) + 0.001);
 			
-				// 파티클마다 고유한 발광 효과 계산
 				float glow = pow(1.0 - dot(vNormal, viewDir), 2.0) * glowIntensity * sin(time * 0.1 + vGlowTiming);
 				vec3 glowColor = vec3(1.0, 1.0, 1.0) * glow;
 			

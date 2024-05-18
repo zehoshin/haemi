@@ -30,19 +30,37 @@ const amountMap = {
 };
 const amountInfo = amountMap[query.amount];
 
+let TEXTURE_WIDTH = 32;
+let TEXTURE_HEIGHT = 32;
+let AMOUNT = TEXTURE_WIDTH * TEXTURE_HEIGHT;
+
 const settings = {
     amount: '2k',
-    speed: 0.4,
+    speed: 0.75,
     dieSpeed: 0.0025,
-    radius: 1.0,
+    radius: 2.0,
     curlSize: 0.015,
     attraction: -2.0,
-    shadowDarkness: 0.66,
     tornadoStrength: 3.3,
-    color1: '#ffa8e4',
-    color2: '#efccff',
+    lightIntensity: 1.0,
+    glowIntensity: 0.2,
+    metalness: 0.3,
+    roughness: 1.0,
+    color1: '#bb00ff',
+    color2: '#f5d6eb',
+    currentModel: 'flower2',
+    scaleFactor: 2,
+    varScaleFactor: 0.6,
+    wholeScale: 0.006,
+    textureWidth: TEXTURE_WIDTH,
+    textureHeight: TEXTURE_HEIGHT,
+    circleRadius: 600,
+    circleHeight: 25,
 };
 
+const models = [];
+const modelNames = ['flower2', 'flower', 'Petal1'];
+let currentModelIndex = 0;
 let camera, simulCamera, scene, simulScene, renderer, controls;
 
 let time = 0;
@@ -62,9 +80,9 @@ let simulMesh;
 let followPoint;
 let followPointTime = 0;
 
-const TEXTURE_WIDTH = amountInfo[0];
-const TEXTURE_HEIGHT = amountInfo[1];
-const AMOUNT = TEXTURE_WIDTH * TEXTURE_HEIGHT;
+// const TEXTURE_WIDTH = amountInfo[0];
+// const TEXTURE_HEIGHT = amountInfo[1];
+// const AMOUNT = TEXTURE_WIDTH * TEXTURE_HEIGHT;
 
 let initAnimation = 0;
 
@@ -95,7 +113,6 @@ let hitTestSource = null;
 let hitTestSourceRequested = false;
 
 let lastValidPosition = new THREE.Vector3();
-
 
 init()
 
@@ -137,7 +154,6 @@ function init() {
     scene.add(lightMesh);
     initSimulator();
     loadGLBModel();
-
     
     function onSelect() {
         if (reticle.visible) {
@@ -145,22 +161,16 @@ function init() {
                 particleMesh = createParticleMesh();
             }
     
-            // reticle의 행렬을 위치, 회전, 스케일로 분해
             const position = new THREE.Vector3();
             const quaternion = new THREE.Quaternion();
             const scale = new THREE.Vector3();
     
             reticle.matrix.decompose(position, quaternion, scale);
     
-            // particleMesh의 위치, 회전, 스케일을 reticle의 값으로 설정
             particleMesh.position.copy(position);
-            // particleMesh.quaternion.copy(quaternion);
-            // particleMesh.scale.copy(scale);
-    
-            // 유효한 위치를 마지막 위치로 저장
+
             lastValidPosition.copy(position);
     
-            // scene에 particleMesh 추가
             scene.add(particleMesh);
         }
     }
@@ -177,16 +187,16 @@ function init() {
     reticle.visible = false;
     scene.add( reticle );
 
-    // const defaultLight = new THREE.HemisphereLight( 0xffffff, 0xbbbbff, 3 );
-    // defaultLight.position.set( 0.5, 1, 0.25 );
-    // scene.add( defaultLight );
+    const defaultLight = new THREE.HemisphereLight( 0xffffff, 0xbbbbff, 3 );
+    defaultLight.position.set( 0.5, 1, 0.25 );
+    scene.add( defaultLight );
 
-    // const loader = new GLTFLoader();
+    const loader = new GLTFLoader();
     // loader.load(
     //     './src/models/scene3.glb',
     //     function ( gltf ) {
     //         let scaleFactor = 1;
-    //         gltf.scene.position.y = -1.5;
+    //         gltf.scene.position.y = -0.5;
     //         gltf.scene.position.z = 6;
     //         gltf.scene.scale.set ( scaleFactor, scaleFactor, scaleFactor);
     //         scene.add( gltf.scene );
@@ -220,15 +230,49 @@ function init() {
     gui.add( settings, 'radius', 0, 10 );
     gui.add( settings, 'curlSize', 0, 0.05 );
     gui.add( settings, 'attraction', -20, 20 );
-    gui.add( settings, 'shadowDarkness', 0, 1 );
-    gui.add( settings, 'tornadoStrength', 0.0, 10.0 );
+    gui.add( settings, 'tornadoStrength', 0.0, 20.0 );
+    gui.add( settings, 'lightIntensity', 0.0, 5.0 );
+    gui.add( settings, 'glowIntensity', 0.0, 1.0 );
+    gui.add( settings, 'metalness', 0.0, 1.0 );
+    gui.add( settings, 'roughness', 0.0, 1.0 );
     gui.addColor( settings, 'color1' );
     gui.addColor( settings, 'color2' );
+
+    gui.add(settings, 'currentModel', modelNames).name('Model').onChange(function(value) {
+        const modelIndex = modelNames.indexOf(value);
+        updateParticleMesh(models[modelIndex]);
+    });
+
+    gui.add(settings, 'scaleFactor', 0, 20).name('Scale Factor').onChange(function(value) {
+        updateScaleTexture();
+    });
+
+    gui.add(settings, 'varScaleFactor', 0, 1).name('Var Scale Factor').onChange(function(value) {
+        updateScaleTexture();
+    });
+
+    gui.add( settings, 'wholeScale', 0.0, 0.1 );
+
+    gui.add(settings, 'textureWidth', 1, 64, 1).name('Texture Width').onChange(updateTextureDimensions);
+    gui.add(settings, 'textureHeight', 1, 64, 1).name('Texture Height').onChange(updateTextureDimensions);
+
+    gui.add( settings, 'circleRadius', 0, 1000, 1);
+    gui.add( settings, 'circleHeight', 0, 100, 1 );
 
     time = Date.now();
     animate();
 }
 
+function updateTextureDimensions() {
+    TEXTURE_WIDTH = settings.textureWidth;
+    TEXTURE_HEIGHT = settings.textureHeight;
+    AMOUNT = TEXTURE_WIDTH * TEXTURE_HEIGHT;
+
+    // Reinitialize the simulator and particle system with new dimensions
+    // initSimulator();
+    updatePositionRenderTarget();
+    updateParticleMesh(models[currentModelIndex]);
+}
 
 //#########SIMULATION##########
 function initSimulator() {
@@ -292,7 +336,21 @@ function initSimulator() {
 
     rotationTexture = createRotationTexture();
     scaleTexture = createScaleTexture();
-    scaleTexture2 = createScaleTexture2();
+}
+
+function updatePositionRenderTarget() {
+    positionRenderTarget = new THREE.WebGLRenderTarget(TEXTURE_WIDTH, TEXTURE_HEIGHT, {
+        wrapS: THREE.ClampToEdgeWrapping,
+        wrapT: THREE.ClampToEdgeWrapping,
+        minFilter: THREE.NearestFilter,
+        magFilter: THREE.NearestFilter,
+        format: THREE.RGBAFormat,
+        type: THREE.FloatType,
+        depthWrite: false,
+        depthBuffer: false,
+        stencilBuffer: false
+    });
+    positionRenderTarget2 = positionRenderTarget.clone();
 }
 
 function copyTexture(input, output) {
@@ -343,25 +401,10 @@ function createRotationTexture() {
     return texture;
 }
 
-function createScaleTexture() {
+function createScaleTexture(varScaleFactor, scaleFactor) {
     const scales = new Float32Array(AMOUNT * 4);
     for (let i = 0; i < AMOUNT; i++) {
-        scales[i * 4 + 0] = Math.random() * 0.6 + 2.0; 
-        scales[i * 4 + 1] = 0.0;
-        scales[i * 4 + 2] = 0.0;
-        scales[i * 4 + 3] = 1.0;
-    }
-    const texture = new THREE.DataTexture(scales, TEXTURE_WIDTH, TEXTURE_HEIGHT, THREE.RGBAFormat, THREE.FloatType);
-    texture.needsUpdate = true;
-    texture.generateMipmaps = false;
-    texture.flipY = false;
-    return texture;
-}
-
-function createScaleTexture2() {
-    const scales = new Float32Array(AMOUNT * 4);
-    for (let i = 0; i < AMOUNT; i++) {
-        scales[i * 4 + 0] = Math.random() * 0.6 + 10; 
+        scales[i * 4 + 0] = Math.random() * varScaleFactor + scaleFactor; 
         scales[i * 4 + 1] = 0.0;
         scales[i * 4 + 2] = 0.0;
         scales[i * 4 + 3] = 1.0;
@@ -375,14 +418,15 @@ function createScaleTexture2() {
 
 function updateSimulator(dt) {
     if(settings.speed || settings.dieSpeed) {
-        const r = 250;
-        const h = 25;
+        let r = settings.circleRadius;
+        let h = settings.circleHeight;
         
         let autoClearColor = renderer.autoClearColor;
         renderer.autoClearColor = false;
 
         const deltaRatio = dt / 16.6667;
 
+        positionShader.uniforms.resolution.value = new THREE.Vector2( settings.textureWidth, settings.textureHeight ),
         positionShader.uniforms.speed.value = settings.speed * deltaRatio;
         positionShader.uniforms.dieSpeed.value = settings.dieSpeed * deltaRatio;
         positionShader.uniforms.radius.value = settings.radius;
@@ -390,6 +434,9 @@ function updateSimulator(dt) {
         positionShader.uniforms.attraction.value = settings.attraction;
         positionShader.uniforms.initAnimation.value = initAnimation;
         positionShader.uniforms.tornadoStrength.value = settings.tornadoStrength;
+        
+        copyShader.uniforms.resolution.value = new THREE.Vector2( settings.textureWidth, settings.textureHeight ),
+
         // positionShader.uniforms.mouse3d.value.copy(settings.mouse3d);
         // followPointTime += dt * 0.001 * settings.speed;
         followPointTime += dt * 0.001;
@@ -443,29 +490,35 @@ function updatePosition(dt) {
 //##########PARTICLES#############
 function loadGLBModel() {
     const loader = new GLTFLoader();
-    loader.load('./src/models/flower2.glb', function(gltf) {
-        glbModel = gltf.scene.children[0];
-        glbMaterial = glbModel.material;
-        initParticles(); 
-        particleMesh.position.set(0,0,0)
-        const scaleFator = 0.011
-        particleMesh.scale.set(scaleFator, scaleFator, scaleFator)
+    const modelPaths = ['./src/models/flower2.glb', './src/models/flower.glb', './src/models/Petal1.glb'];
 
-        scene.add(particleMesh);
+    modelPaths.forEach(path => {
+        loader.load(path, function(gltf) {
+            const model = gltf.scene.children[0];
+            models.push(model);
+            console.log(`${path} loaded and added to models array.`);
+
+            if (models.length === modelPaths.length) {
+                initParticles();
+            }
+        });
     });
 }
 
 //##########입자#############
 function initParticles() {
-    if (!glbModel) {
-        console.error("GLB 모델이 로드되지 않았습니다.");
+    if (models.length === 0) {
+        console.error("No GLB models have been loaded.");
         return;
     }
-    particleMesh = createParticleMesh();
+    const glbModel = models[currentModelIndex];
+    particleMesh = createParticleMesh(glbModel);
+
+    scene.add(particleMesh);
 }
 
-function createParticleMesh() {
-    const geometry = glbModel.geometry;
+function createParticleMesh(model) {
+    const geometry = model.geometry;
     const material = new THREE.ShaderMaterial({
         vertexShader: document.getElementById('vertexShader').textContent,
         fragmentShader: document.getElementById('fragmentShader').textContent,
@@ -473,7 +526,7 @@ function createParticleMesh() {
             resolution: { type: 'v2', value: new THREE.Vector2( TEXTURE_WIDTH, TEXTURE_HEIGHT ) },
             texturePosition: { value: positionRenderTarget.texture },
             textureRotation: { value: rotationTexture },
-            textureScale: { value: scaleTexture }, 
+            textureScale: { value: createScaleTexture(settings.varScaleFactor, settings.scaleFactor) }, 
             time: { value: 0.0 },
             color1: { value: new THREE.Color(settings.color1) }, 
             color2: { value: new THREE.Color(settings.color2) },
@@ -505,11 +558,34 @@ function createParticleMesh() {
 function updateParticles(dt) {
     if (!particleMesh) return;
 
+    particleMesh.material.uniforms.resolution.value = new THREE.Vector2( settings.textureWidth, settings.textureHeight );
     particleMesh.material.uniforms.texturePosition.value = positionRenderTarget.texture;
     particleMesh.material.uniforms.time.value += dt * 0.01;;
-    particleMesh.material.uniforms.glowIntensity.value = Math.sin(time * 0.01) * 0.2;
+    particleMesh.material.uniforms.color1.value = new THREE.Color(settings.color1);
+    particleMesh.material.uniforms.color2.value = new THREE.Color(settings.color2);
+    particleMesh.material.uniforms.ambientLightIntensity.value = settings.lightIntensity;
+    particleMesh.material.uniforms.glowIntensity.value = Math.sin(time * 0.01) * settings.glowIntensity;
+    particleMesh.material.uniforms.metalness.value = settings.metalness;
+    particleMesh.material.uniforms.roughness.value = settings.roughness;
+    particleMesh.scale.set(settings.wholeScale, settings.wholeScale, settings.wholeScale);
     particleMesh.material.uniformsNeedUpdate = true;
+}
 
+function updateScaleTexture() {
+    particleMesh.material.uniforms.textureScale.value = createScaleTexture(settings.varScaleFactor, settings.scaleFactor);
+    particleMesh.material.uniforms.textureScale.needsUpdate = true;
+}
+
+
+function updateParticleMesh(model) {
+    if (particleMesh) {
+        scene.remove(particleMesh);
+    }
+    particleMesh = createParticleMesh(model);
+    particleMesh.position.set(0, 0, 0);
+    const scaleFator = 0.011;
+    particleMesh.scale.set(scaleFator, scaleFator, scaleFator);
+    scene.add(particleMesh);
 }
 
 //##########LIGHT##########
