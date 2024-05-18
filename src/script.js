@@ -94,6 +94,9 @@ let reticle, controller;
 let hitTestSource = null;
 let hitTestSourceRequested = false;
 
+let lastValidPosition = new THREE.Vector3();
+
+
 init()
 
 function init() {
@@ -135,7 +138,6 @@ function init() {
     initSimulator();
     loadGLBModel();
 
-    let lastValidPosition = new THREE.Vector3();
     
     function onSelect() {
         if (reticle.visible) {
