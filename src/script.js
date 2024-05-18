@@ -135,8 +135,10 @@ function init() {
     initSimulator();
     loadGLBModel();
 
+    let lastValidPosition = new THREE.Vector3();
+    
     function onSelect() {
-        if ( reticle.visible ) {
+        if (reticle.visible) {
             if (!particleMesh) {
                 particleMesh = createParticleMesh();
             }
@@ -149,11 +151,15 @@ function init() {
             reticle.matrix.decompose(position, quaternion, scale);
     
             // particleMesh의 위치, 회전, 스케일을 reticle의 값으로 설정
-            // particleMesh.position.set(0,0,-10)
             particleMesh.position.copy(position);
             // particleMesh.quaternion.copy(quaternion);
             // particleMesh.scale.copy(scale);
-            scene.add( particleMesh );
+    
+            // 유효한 위치를 마지막 위치로 저장
+            lastValidPosition.copy(position);
+    
+            // scene에 particleMesh 추가
+            scene.add(particleMesh);
         }
     }
 
@@ -575,6 +581,10 @@ function render(timestamp, frame) {
             }
         }
     }
+    if (!reticle.visible && particleMesh) {
+        particleMesh.position.copy(lastValidPosition);
+    }
+
     scene.traverse( function( object ) {
         object.frustumCulled = false;
     } );
