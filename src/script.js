@@ -4,7 +4,6 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { ARButton } from 'three/addons/webxr/ARButton.js';
 
-// import { BloomEffect, EffectComposer, EffectPass, RenderPass } from "postprocessing";
 import { FakeGlowMaterial } from 'three/addons/materials/FakeGlowMaterial.js';
 
 //settings
@@ -54,9 +53,10 @@ let ray = new THREE.Ray();
 let particleMesh;
 let color1, color2, tmpColor;
 let texture;
+let sphereMesh;
 
 //simulator
-let copyShader, positionShader, textureDefaultPosition, positionRenderTarget, positionRenderTarget2, rotationTexture, scaleTexture;
+let copyShader, positionShader, textureDefaultPosition, positionRenderTarget, positionRenderTarget2, rotationTexture, scaleTexture, scaleTexture2;
 
 let simulMesh;
 let followPoint;
@@ -76,7 +76,7 @@ let lightMesh;
 let glbModel;
 let glbMaterial;
 let rotationSpeeds;
-let colorIndices;
+let colorIndices, glowTimings;
 
 const params = {
     exposure: 1,
@@ -126,46 +126,16 @@ function init() {
     document.body.appendChild ( renderer.domElement );
     document.body.appendChild( ARButton.createButton( renderer ));
 
-    // composer = new EffectComposer(renderer);
-    // composer.addPass(new RenderPass(scene, camera));
-    // composer.addPass(new EffectPass(camera, new BloomEffect({
-    //     intensity: 1.0
-    // }))); 
-
-    // window.addEventListener('resize', function() {
-    //     camera.aspect = window.innerWidth / window.innerHeight;
-    //     camera.updateProjectionMatrix();
-    //     renderer.setSize(window.innerWidth, window.innerHeight);
-    //     composer.setSize(window.innerWidth, window.innerHeight);
-    // });
-
     //
-    const geometry1 = new THREE.SphereGeometry();
-    const FakeGlowMaterial1 = new FakeGlowMaterial();
-    const Sphere = new THREE.Mesh(geometry1, FakeGlowMaterial1);
-    Sphere.scale.set(1,1,1)
-    Sphere.position.z = -10;
-    scene.add(Sphere);
 
     initLight();
     scene.add(lightMesh);
     initSimulator();
-    // loadGLBModel();
+    loadGLBModel();
 
     const defaultLight = new THREE.HemisphereLight( 0xffffff, 0xbbbbff, 3 );
     defaultLight.position.set( 0.5, 1, 0.25 );
     scene.add( defaultLight );
-
-    const geometry = new THREE.BoxGeometry( 10, 10, 10 );
-    const material = new THREE.MeshStandardMaterial( { 
-        color: 0xffffff,
-        roughness: 1.0,
-        metalness: 0.0,
-    } );
-    const cube = new THREE.Mesh( geometry, material );
-    cube.position.z = -2;
-    cube.receiveShadow = true;
-    // scene.add( cube );
 
     const loader = new GLTFLoader();
     // loader.load(
@@ -178,6 +148,12 @@ function init() {
     //         scene.add( gltf.scene );
     //     },
     // );
+
+    const sphereGeometry = new THREE.SphereGeometry(1, 32, 32);
+    const sphereMaterial = new FakeGlowMaterial();
+    const instancedMesh = new THREE.Mesh(sphereGeometry, sphereMaterial);
+    // scene.add(instancedMesh);
+
 
     window.addEventListener('keyup', onKeyUp);
 
@@ -272,6 +248,7 @@ function initSimulator() {
 
     rotationTexture = createRotationTexture();
     scaleTexture = createScaleTexture();
+    scaleTexture2 = createScaleTexture2();
 }
 
 function copyTexture(input, output) {
@@ -337,6 +314,20 @@ function createScaleTexture() {
     return texture;
 }
 
+function createScaleTexture2() {
+    const scales = new Float32Array(AMOUNT * 4);
+    for (let i = 0; i < AMOUNT; i++) {
+        scales[i * 4 + 0] = Math.random() * 0.6 + 10; 
+        scales[i * 4 + 1] = 0.0;
+        scales[i * 4 + 2] = 0.0;
+        scales[i * 4 + 3] = 1.0;
+    }
+    const texture = new THREE.DataTexture(scales, TEXTURE_WIDTH, TEXTURE_HEIGHT, THREE.RGBAFormat, THREE.FloatType);
+    texture.needsUpdate = true;
+    texture.generateMipmaps = false;
+    texture.flipY = false;
+    return texture;
+}
 
 function updateSimulator(dt) {
     if(settings.speed || settings.dieSpeed) {
@@ -439,28 +430,41 @@ function createParticleMesh() {
             color1: { value: new THREE.Color(settings.color1) }, 
             color2: { value: new THREE.Color(settings.color2) },
             lightPosition: { value: new THREE.Vector3(10, 10, 10) },
-            ambientLightIntensity: { value: 2.0 },
+            ambientLightIntensity: { value: 1.25 },
             metalness: { value: 0.0 },
             roughness: { value: 1.0 }, 
+            glowIntensity: { value: 1.0 }, 
         },
         transparent: true,
     });
     const mesh = new THREE.InstancedMesh(geometry, material, AMOUNT);
     mesh.receiveShadow = true;
 
-    colorIndices = new Float32Array(AMOUNT); 
+    colorIndices = new Float32Array(AMOUNT);
+    glowTimings = new Float32Array(AMOUNT);  
+
+    for (let i = 0; i < AMOUNT; i++) {
+        colorIndices[i] = Math.random();
+        glowTimings[i] = Math.random() * 100.0;
+    }
 
     geometry.setAttribute('colorIndex', new THREE.InstancedBufferAttribute(colorIndices, 1));
+    geometry.setAttribute('glowTiming', new THREE.InstancedBufferAttribute(glowTimings, 1)); 
+
+    const group = new THREE.Group();
+    group.add(mesh);
     
-    return mesh;
+    return group;
 }
 
 function updateParticles(dt) {
     if (!particleMesh) return;
 
-    particleMesh.material.uniforms.texturePosition.value = positionRenderTarget.texture;
-    particleMesh.material.uniforms.time.value += dt * 0.01;;
-    particleMesh.material.uniformsNeedUpdate = true;
+    particleMesh.children[0].material.uniforms.texturePosition.value = positionRenderTarget.texture;
+    particleMesh.children[0].material.uniforms.time.value += dt * 0.01;;
+    particleMesh.children[0].material.uniforms.glowIntensity.value = Math.sin(time * 0.01) * 0.2;
+    particleMesh.children[0].material.uniformsNeedUpdate = true;
+
 }
 
 //##########LIGHT##########
@@ -507,36 +511,8 @@ function render() {
     updateSimulator(dt);
     updateParticles(dt);
 
-    // const session = renderer.xr.getSession();
-    // const isXR = session !== null;
-
-    // if (isXR) {
-    // composer.render();
-    // } else {
-    //     renderer.render( scene, camera )
-    // }
-    // // renderer.render( scene, camera )
-    // //
-    // renderer.xr.enabled = false;
-
-    // // Update camera with XRPose
-    // renderer.xr.updateCamera(camera);
-
-    // // Render stereo cameras
-    // const { cameras } = renderer.xr.getCamera();
-    // cameras.forEach(({ viewport, matrixWorld, projectionMatrix }) => {
-    //     renderer.setViewport(viewport);
-    //   camera.position.setFromMatrixPosition(matrixWorld);
-    //   camera.projectionMatrix.copy(projectionMatrix);
     renderer.render( scene, camera )
-    // composer.render( scene, camera );
-    // });
 
-    // // Reset
-    // renderer.clear();
-    // renderer.xr.updateCamera(camera);
-    // renderer.xr.enabled = true;
-    // //
 }
 
 //#########EVENT LISTENER#############
@@ -549,9 +525,6 @@ function onKeyUp(evt) {
 
 renderer.xr.addEventListener( 'sessionstart', function ( event ) {
     console.log('onAR')
-    // const session = renderer.xr.getSession();
-    // const gl = renderer.getContext();
-    // session.updateRenderState({ baseLayer: new XRWebGLLayer(session, gl) });
 } );
 
 renderer.xr.addEventListener( 'sessionend', function ( event ) {

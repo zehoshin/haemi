@@ -230,9 +230,11 @@
 			uniform vec2 resolution;
 			uniform float time;
 			attribute float colorIndex;
+			attribute float glowTiming; 
 			varying float vColorIndex;
 			varying vec3 vNormal;
 			varying vec3 vPosition;
+			varying float vGlowTiming;
 		
 			mat3 rotationMatrix(vec3 rotation) {
 				float cosX = cos(rotation.x);
@@ -265,6 +267,8 @@
 		
 			void main() {
 				vColorIndex = colorIndex;
+				vGlowTiming = glowTiming;
+
 				vNormal = normalize(normalMatrix * normal);
 		
 				vec2 uv = vec2(gl_InstanceID % int(resolution.x), gl_InstanceID / int(resolution.x)) / resolution;
@@ -290,39 +294,44 @@
 			uniform float ambientLightIntensity;
 			uniform float metalness;
 			uniform float roughness;
+			uniform float time;
+			uniform float glowIntensity;
 			varying float vColorIndex;
 			varying vec3 vNormal;
 			varying vec3 vPosition;
-		
+			varying float vGlowTiming;
+			
 			vec3 fresnelSchlick(float cosTheta, vec3 F0) {
 				return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
 			}
-		
+			
 			void main() {
 				vec3 lightDir = normalize(lightPosition - vPosition);
 				float lightIntensity = max(dot(vNormal, lightDir), 0.0);
 				vec3 color = mix(color1, color2, vColorIndex);
 				
-				// CACL AMBIENT LIGHT
 				vec3 ambient = color * ambientLightIntensity;
-		
-				// CALC METALIC MATERIAL
 				vec3 F0 = mix(vec3(0.04), color, metalness);
 				vec3 viewDir = normalize(-vPosition);
 				vec3 halfDir = normalize(lightDir + viewDir);
 				float NDF = pow(max(dot(vNormal, halfDir), 0.0), roughness);
 				float G = max(dot(vNormal, lightDir) * dot(vNormal, viewDir), 0.0);
 				vec3 F = fresnelSchlick(max(dot(halfDir, viewDir), 0.0), F0);
-		
+			
 				vec3 kD = vec3(1.0) - F;
 				kD *= 1.0 - metalness;
-		
+			
 				vec3 diffuse = kD * color * lightIntensity;
 				vec3 specular = F * NDF * G / (4.0 * max(dot(vNormal, lightDir), 0.0) * max(dot(vNormal, viewDir), 0.0) + 0.001);
-		
-				vec3 finalColor = ambient + diffuse + specular;
+			
+				// 파티클마다 고유한 발광 효과 계산
+				float glow = pow(1.0 - dot(vNormal, viewDir), 2.0) * glowIntensity * sin(time * 0.1 + vGlowTiming);
+				vec3 glowColor = vec3(1.0, 1.0, 1.0) * glow;
+			
+				vec3 finalColor = ambient + diffuse + specular + glowColor;
 				gl_FragColor = vec4(finalColor, 1.0);
 			}
 		</script>
+
 	</body>
 </html>

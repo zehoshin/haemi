@@ -1122,7 +1122,7 @@ var EffectComposer = class {
     }
 
     
-
+    renderer.xr.enabled = false;
     renderer.xr.updateCamera(camera);
 
     const { cameras } = renderer.xr.getCamera();
@@ -1148,6 +1148,7 @@ var EffectComposer = class {
     renderer.setRenderTarget(null);
     // renderer.clear();
     renderer.xr.updateCamera(camera);
+    renderer.xr.enabled = true;
   }
   /**
    * Sets the size of the buffers, passes and the renderer.
