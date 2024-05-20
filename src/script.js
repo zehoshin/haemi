@@ -60,7 +60,7 @@ const settings = {
     glowInternalRadius: 0.0,
     glowColor: '#d400ff',
     glowSharpness: 0.0,
-    opacity: 0.15,
+    opacity: 0.1,
     amountNum: 1024, 
 };
 
@@ -212,7 +212,7 @@ function init() {
     //     },
     // );
 
-    const sphereGeometry = new THREE.SphereGeometry(50, 10, 10);
+    const sphereGeometry = new THREE.SphereGeometry(50, 8, 8);
 
     const sphereMaterial = new THREE.ShaderMaterial({
         vertexShader: document.getElementById('glowVertex').textContent,
@@ -232,7 +232,6 @@ function init() {
         depthTest: true,
         depthWrite: false,
         blending: THREE.AdditiveBlending,
-        alphaTest: 0.5,
     });
     
     instancedMesh = new THREE.InstancedMesh(sphereGeometry, sphereMaterial, AMOUNT);
@@ -293,7 +292,7 @@ function init() {
     gui.add( settings, 'circleHeight', 0, 100, 1 );
 
     gui.add( settings, 'falloff', 0, 10);
-    gui.add( settings, 'glowInternalRadius', 0, 100);
+    gui.add( settings, 'glowInternalRadius', 0, 10);
     gui.addColor( settings, 'glowColor' );
     gui.add( settings, 'glowSharpness', 0, 10);
     gui.add( settings, 'opacity', 0, 1);
