@@ -56,11 +56,11 @@ const settings = {
     textureHeight: TEXTURE_HEIGHT,
     circleRadius: 600,
     circleHeight: 25,
-    falloff: 0.0,
+    falloff: 3.0,
     glowInternalRadius: 10.0,
-    glowColor: '#9900ff',
-    glowSharpness: 0.0,
-    opacity: 0.15,
+    glowColor: '#d400ff',
+    glowSharpness: 0.05,
+    opacity: 1.0,
     amountNum: 1024, 
 };
 
@@ -212,7 +212,7 @@ function init() {
     //     },
     // );
 
-    const sphereGeometry = new THREE.SphereGeometry(100, 5, 5);
+    const sphereGeometry = new THREE.SphereGeometry(150, 10, 10);
 
     const sphereMaterial = new THREE.ShaderMaterial({
         vertexShader: document.getElementById('glowVertex').textContent,
@@ -232,6 +232,7 @@ function init() {
         depthTest: true,
         depthWrite: false,
         blending: THREE.AdditiveBlending,
+        alphaTest: 0.5,
     });
     
     instancedMesh = new THREE.InstancedMesh(sphereGeometry, sphereMaterial, AMOUNT);
