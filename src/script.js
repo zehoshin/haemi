@@ -126,7 +126,7 @@ function init() {
     scene = new THREE.Scene();
     // scene.background = new THREE.Color( 0x000000 );
 
-    camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.1, 10000);
+    camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.position.set( 0, 10, 8 );
     // camera.position.set(-440, 380, 800);
     // camera.position.set( 0, 500, 600 );
@@ -212,7 +212,7 @@ function init() {
     //     },
     // );
 
-    const sphereGeometry = new THREE.SphereGeometry(150, 10, 10);
+    const sphereGeometry = new THREE.SphereGeometry(50, 10, 10);
 
     const sphereMaterial = new THREE.ShaderMaterial({
         vertexShader: document.getElementById('glowVertex').textContent,
