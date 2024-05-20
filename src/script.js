@@ -56,11 +56,11 @@ const settings = {
     textureHeight: TEXTURE_HEIGHT,
     circleRadius: 600,
     circleHeight: 25,
-    falloff: 3.0,
-    glowInternalRadius: 10.0,
+    falloff: 0.0,
+    glowInternalRadius: 0.0,
     glowColor: '#d400ff',
-    glowSharpness: 0.05,
-    opacity: 1.0,
+    glowSharpness: 0.0,
+    opacity: 0.15,
     amountNum: 1024, 
 };
 
