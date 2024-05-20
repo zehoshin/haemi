@@ -37,8 +37,8 @@ let AMOUNT = TEXTURE_WIDTH * TEXTURE_HEIGHT;
 const settings = {
     amount: '2k',
     speed: 0.75,
-    dieSpeed: 0.0025,
-    radius: 2.0,
+    dieSpeed: 0.001,
+    radius: 1.5,
     curlSize: 0.015,
     attraction: -2.0,
     tornadoStrength: 3.3,
@@ -56,6 +56,12 @@ const settings = {
     textureHeight: TEXTURE_HEIGHT,
     circleRadius: 600,
     circleHeight: 25,
+    falloff: 0.0,
+    glowInternalRadius: 10.0,
+    glowColor: '#22082b',
+    glowSharpness: 0.0,
+    opacity: 1.0,
+    amountNum: 1024, 
 };
 
 const models = [];
@@ -113,14 +119,14 @@ let hitTestSource = null;
 let hitTestSourceRequested = false;
 
 let lastValidPosition = new THREE.Vector3();
-
+let instancedMesh;
 init()
 
 function init() {
     scene = new THREE.Scene();
     scene.background = new THREE.Color( 0x000000 );
 
-    camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.1, 10000);
     camera.position.set( 0, 10, 8 );
     // camera.position.set(-440, 380, 800);
     // camera.position.set( 0, 500, 600 );
@@ -168,10 +174,13 @@ function init() {
             reticle.matrix.decompose(position, quaternion, scale);
     
             particleMesh.position.copy(position);
+            instancedMesh.position.copy(position);
 
             lastValidPosition.copy(position);
     
             scene.add(particleMesh);
+            scene.add(instancedMesh);
+
         }
     }
 
@@ -203,10 +212,33 @@ function init() {
     //     },
     // );
 
-    const sphereGeometry = new THREE.SphereGeometry(1, 32, 32);
-    const sphereMaterial = new FakeGlowMaterial();
-    const instancedMesh = new THREE.Mesh(sphereGeometry, sphereMaterial);
-    // scene.add(instancedMesh);
+    const sphereGeometry = new THREE.SphereGeometry(100, 5, 5);
+
+    const sphereMaterial = new THREE.ShaderMaterial({
+        vertexShader: document.getElementById('glowVertex').textContent,
+        fragmentShader: document.getElementById('glowFragment').textContent,
+        uniforms: {
+            resolution: { type: 'v2', value: new THREE.Vector2( TEXTURE_WIDTH, TEXTURE_HEIGHT ) },
+            texturePosition: { value: positionRenderTarget.texture },
+            falloff: { value: 0.0 },
+            glowInternalRadius: { value: 10.0 },
+            glowColor: { value: new THREE.Color("#ffffff") },
+            glowSharpness: { value: 0.0 },
+            opacity: { value: 2.3 },
+            scale: { value: new THREE.Vector3(settings.wholeScale, settings.wholeScale, settings.wholeScale) },
+        },
+        transparent: true,
+        side: THREE.DoubleSide,
+        depthTest: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+    });
+    
+    instancedMesh = new THREE.InstancedMesh(sphereGeometry, sphereMaterial, AMOUNT);
+    instancedMesh.scale.set(settings.wholeScale, settings.wholeScale, settings.wholeScale)
+    instancedMesh.renderOrder = 1;
+    scene.add(instancedMesh);
+
 
 
     window.addEventListener('keyup', onKeyUp);
@@ -258,6 +290,18 @@ function init() {
 
     gui.add( settings, 'circleRadius', 0, 1000, 1);
     gui.add( settings, 'circleHeight', 0, 100, 1 );
+
+    gui.add( settings, 'falloff', 0, 10);
+    gui.add( settings, 'glowInternalRadius', 0, 10);
+    gui.addColor( settings, 'glowColor' );
+    gui.add( settings, 'glowSharpness', 0, 10);
+    gui.add( settings, 'opacity', 0, 1);
+
+    gui.add( settings, 'amountNum', 0, 2048, 1).onChange(function() {
+        updateParticleMesh(models[currentModelIndex]);
+    });
+
+
 
     time = Date.now();
     animate();
@@ -513,7 +557,7 @@ function initParticles() {
     }
     const glbModel = models[currentModelIndex];
     particleMesh = createParticleMesh(glbModel);
-
+    particleMesh.renderOrder = 2;
     scene.add(particleMesh);
 }
 
@@ -537,14 +581,17 @@ function createParticleMesh(model) {
             glowIntensity: { value: 1.0 }, 
         },
         transparent: true,
+        side: THREE.DoubleSide,
+        depthTest: false,
+        depthWrite: false,
     });
-    const mesh = new THREE.InstancedMesh(geometry, material, AMOUNT);
+    const mesh = new THREE.InstancedMesh(geometry, material, settings.amountNum);
     mesh.receiveShadow = true;
 
-    colorIndices = new Float32Array(AMOUNT);
-    glowTimings = new Float32Array(AMOUNT);  
+    colorIndices = new Float32Array(settings.amountNum);
+    glowTimings = new Float32Array(settings.amountNum);  
 
-    for (let i = 0; i < AMOUNT; i++) {
+    for (let i = 0; i < settings.amountNum; i++) {
         colorIndices[i] = Math.random();
         glowTimings[i] = Math.random() * 100.0;
     }
@@ -569,6 +616,18 @@ function updateParticles(dt) {
     particleMesh.material.uniforms.roughness.value = settings.roughness;
     particleMesh.scale.set(settings.wholeScale, settings.wholeScale, settings.wholeScale);
     particleMesh.material.uniformsNeedUpdate = true;
+
+    instancedMesh.material.uniforms.resolution.value = new THREE.Vector2( settings.textureWidth, settings.textureHeight );
+    instancedMesh.material.uniforms.texturePosition.value = positionRenderTarget.texture;
+    instancedMesh.material.uniforms.falloff.value = settings.falloff;
+    instancedMesh.material.uniforms.glowInternalRadius.value = settings.glowInternalRadius;
+    instancedMesh.material.uniforms.glowColor.value = new THREE.Color(settings.glowColor);
+    instancedMesh.material.uniforms.glowSharpness.value = settings.glowSharpness;
+    instancedMesh.material.uniforms.opacity.value = settings.opacity;
+    instancedMesh.material.uniforms.scale.value = new THREE.Vector3(settings.wholeScale, settings.wholeScale, settings.wholeScale);
+    instancedMesh.scale.set(settings.wholeScale, settings.wholeScale, settings.wholeScale);
+
+    instancedMesh.instanceMatrix.needsUpdate = true;
 }
 
 function updateScaleTexture() {
@@ -659,10 +718,10 @@ function render(timestamp, frame) {
             }
         }
     }
-    if (!reticle.visible && particleMesh) {
+    if (!reticle.visible && particleMesh && instancedMesh) {
         particleMesh.position.copy(lastValidPosition);
+        instancedMesh.position.copy(lastValidPosition);
     }
-
     scene.traverse( function( object ) {
         object.frustumCulled = false;
     } );

@@ -1,7 +1,7 @@
 /**
  * FakeGlow material by Anderson Mancini - Fec 2024.
  */
-import { ShaderMaterial, Uniform, Color, AdditiveBlending, FrontSide, BackSide, DoubleSide } from 'three';
+import { ShaderMaterial, Uniform, Color, AdditiveBlending, FrontSide, BackSide, DoubleSide, RawShaderMaterial } from 'three';
 
 export class FakeGlowMaterial extends ShaderMaterial {
 
