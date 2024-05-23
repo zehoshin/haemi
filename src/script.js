@@ -1193,12 +1193,11 @@ renderer.xr.addEventListener( 'sessionend', function ( event ) {
     console.log('offAR')
 } );
 
-const URL = "./my_model/";
 let model, webcam, maxPredictions, frameID, prediction;
 
 async function initPrediction() {
-	const modelURL = URL + "model.json";
-	const metadataURL = URL + "metadata.json";
+	const modelURL = "./src/my_model/model.json";
+	const metadataURL = "./src/my_model/metadata.json";
 	model = await tmImage.load(modelURL, metadataURL);
 	maxPredictions = model.getTotalClasses();
 	webcam = new tmImage.Webcam(200, 200, false);
