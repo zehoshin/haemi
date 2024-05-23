@@ -901,10 +901,10 @@ function render(timestamp, frame) {
         }
     }
 
-    if (!reticle.visible && particleMesh && glowMesh) {
-        particleMesh.position.copy(lastValidPosition);
-        glowMesh.position.copy(lastValidPosition);
-    }
+    // if (!reticle.visible && particleMesh && glowMesh) {
+    //     particleMesh.position.copy(lastValidPosition);
+    //     glowMesh.position.copy(lastValidPosition);
+    // }
 
     scene.traverse( function( object ) {
         object.frustumCulled = false;
@@ -1170,9 +1170,12 @@ function onSelect() {
         playAnimation();
 
         particleMesh.position.copy(position);
-        glowMesh.position.copy(position);
+        particleMesh.rotation.copy(quaternion);
 
-        lastValidPosition.copy(position);
+        glowMesh.position.copy(position);
+        glowMesh.rotation.copy(quaternion);
+
+        // lastValidPosition.copy(position);
 
         scene.add(particleMesh);
         scene.add(glowMesh);
