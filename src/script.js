@@ -1212,18 +1212,22 @@ async function initPrediction() {
 }
 
 async function loop() {
-	if (webcam !== null && prediction[0].probability < 0.8) {
+	if (webcam !== null) {
 		webcam.update();
 		await predict();
 		frameID = window.requestAnimationFrame(loop);
+        if (prediction[0].probability < 0.8){
+            await webcam.stop();
+            window.cancelAnimationFrame(frameID);
+            webcam = null;
+            playAnimation();
+            console.log('Webcam stopped');
+        }
 	} else {
-        await webcam.stop();
-        window.cancelAnimationFrame(frameID);
-        webcam = null;
-        playAnimation();
         console.log('Webcam stopped');
 	}
 }
+
 
 async function predict() {
 	prediction = await model.predict(webcam.canvas);
