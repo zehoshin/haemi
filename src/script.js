@@ -1193,7 +1193,7 @@ renderer.xr.addEventListener( 'sessionend', function ( event ) {
     console.log('offAR')
 } );
 
-const URL = "../my_model/";
+const URL = "./my_model/";
 let model, webcam, maxPredictions, frameID, prediction;
 
 async function initPrediction() {
