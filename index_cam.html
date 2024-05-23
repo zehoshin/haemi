@@ -67,24 +67,24 @@ async function predict() {
 	}
 }
 
-function setupEventListeners() {
-	document.getElementById('ARButton').addEventListener('click', async function() {
-		await webcam.stop();
-		window.cancelAnimationFrame(frameID);
-		document.getElementById("webcam-container").removeChild(webcam.canvas);
-		webcam = null;
-		console.log('Webcam stopped');
-	});
+// function setupEventListeners() {
+// 	document.getElementById('ARButton').addEventListener('click', async function() {
+// 		await webcam.stop();
+// 		window.cancelAnimationFrame(frameID);
+// 		document.getElementById("webcam-container").removeChild(webcam.canvas);
+// 		webcam = null;
+// 		console.log('Webcam stopped');
+// 	});
 
-	document.querySelector('svg').addEventListener('click', async function() {
-		webcam = new tmImage.Webcam(200, 200, false);
-		await webcam.setup({ facingMode: 'environment' });
-		await webcam.play();
-		document.getElementById("webcam-container").appendChild(webcam.canvas);
-		loop();
-		console.log('Webcam started');
-	});
-}
+// 	document.querySelector('svg').addEventListener('click', async function() {
+// 		webcam = new tmImage.Webcam(200, 200, false);
+// 		await webcam.setup({ facingMode: 'environment' });
+// 		await webcam.play();
+// 		document.getElementById("webcam-container").appendChild(webcam.canvas);
+// 		loop();
+// 		console.log('Webcam started');
+// 	});
+// }
 
 document.addEventListener("DOMContentLoaded", function() {
 	init().then(setupEventListeners); 
