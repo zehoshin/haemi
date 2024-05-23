@@ -3,137 +3,276 @@ import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { ARButton } from 'three/addons/webxr/ARButton.js';
+import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js'
 
-import { FakeGlowMaterial } from 'three/addons/materials/FakeGlowMaterial.js';
-
-//settings
-const urlParams = new URLSearchParams(window.location.search);
-const query = {
-    amount: urlParams.get('amount') || '2k',
-};
-
-const amountMap = {
-    '256': [16, 16, 0.1],
-    '1k': [32, 32, 0.16],
-    '2k': [64, 32, 0.21],
-    '4k': [64, 64, 0.29],
-    '8k': [128, 64, 0.42],
-    '16k': [128, 128, 0.45],
-    '32k': [256, 128, 0.55],
-    '65k': [256, 256, 0.6],
-    '131k': [512, 256, 0.85],
-    '252k': [512, 512, 1.2],
-    '524k': [1024, 512, 1.4],
-    '1m': [1024, 1024, 1.6],
-    '2m': [2048, 1024, 2],
-    '4m': [2048, 2048, 2.5]
-};
-const amountInfo = amountMap[query.amount];
-
-let TEXTURE_WIDTH = 32;
-let TEXTURE_HEIGHT = 32;
-let AMOUNT = TEXTURE_WIDTH * TEXTURE_HEIGHT;
+let flag1 = false;
 
 const settings = {
-    amount: '2k',
-    speed: 0.75,
+    //amount
+    textureWidth: 64,
+    textureHeight: 64, 
+
+    //simul
+    speed: 1.5,
     dieSpeed: 0.001,
     radius: 1.5,
     curlSize: 0.015,
     attraction: -2.0,
-    tornadoStrength: 3.3,
-    lightIntensity: 1.0,
+    tornadoStrength: 2.0,
+    circleRadius: 0,
+    circleHeight: 25,
+
+    //color
+    lightIntensity: 0.7,
     glowIntensity: 0.2,
     metalness: 0.3,
     roughness: 1.0,
-    color1: '#bb00ff',
-    color2: '#f5d6eb',
-    currentModel: 'flower2',
-    scaleFactor: 2,
-    varScaleFactor: 0.6,
+    color1: '#cfd945',
+    color2: '#448717',
+    parOpacity: 0.0,
+
+    //scale
+    currentModel: 'Petal',
+    currentScene: 'scene1',
+    scaleFactor: 0.0,
+    varScaleFactor: 0.0,
     wholeScale: 0.006,
-    textureWidth: TEXTURE_WIDTH,
-    textureHeight: TEXTURE_HEIGHT,
-    circleRadius: 600,
-    circleHeight: 25,
+
+    //glow
     falloff: 0.0,
     glowInternalRadius: 0.0,
-    glowColor: '#d400ff',
+    glowColor: '#66ff00',
     glowSharpness: 0.0,
-    opacity: 0.1,
-    amountNum: 1024, 
+    opacity: 0.000,
 };
 
-const models = [];
-const modelNames = ['flower2', 'flower', 'Petal1'];
-let currentModelIndex = 0;
-let camera, simulCamera, scene, simulScene, renderer, controls;
+const presets = {
+    scene1: {
+        //amount
+        textureWidth: 64,
+        textureHeight: 64, 
 
-let time = 0;
+        //simul
+        speed: 0.5,
+        dieSpeed: 0.001,
+        radius: 1.5,
+        curlSize: 0.015,
+        attraction: -2.0,
+        tornadoStrength: 2.0,
+        circleRadius: 600,
+        circleHeight: 25,
+
+        //color
+        lightIntensity: 0.7,
+        glowIntensity: 0.2,
+        metalness: 0.3,
+        roughness: 1.0,
+        color1: '#cfd945',
+        color2: '#448717',
+        parOpacity: 1.0,
+        
+        //scale
+        currentModel: 'Petal',
+        currentScene: 'scene1',
+        scaleFactor: 0.6,
+        varScaleFactor: 0.6,
+        wholeScale: 0.006,
+
+        //glow
+        falloff: 0.0,
+        glowInternalRadius: 0.0,
+        glowColor: '#66ff00',
+        glowSharpness: 0.0,
+        opacity: 0.005,
+    },
+    scene2: {
+        //amount
+        textureWidth: 16,
+        textureHeight: 16, 
+
+        //simul
+        speed: 0.1,
+        dieSpeed: 0.0,
+        radius: 10.0,
+        curlSize: 0.015,
+        attraction: -2.0,
+        tornadoStrength: 2.0,
+        circleRadius: 1000,
+        circleHeight: 25,
+
+        //color
+        lightIntensity: 0.7,
+        glowIntensity: 0.2,
+        metalness: 0.3,
+        roughness: 1.0,
+        color1: '#f8c75d',
+        color2: '#ebd6f5',
+        parOpacity: 1.0,
+
+        //scale
+        currentModel: 'Petal',
+        currentScene: 'scene2',
+        scaleFactor: 0.6,
+        varScaleFactor: 0.6,
+        wholeScale: 0.006,
+
+        //glow
+        falloff: 0.0,
+        glowInternalRadius: 0.0,
+        glowColor: '#ff7b00',
+        glowSharpness: 0.0,
+        opacity: 0.012,
+    },
+    scene3: {
+        //amount
+        textureWidth: 32,
+        textureHeight: 32,
+
+        //simul
+        speed: 0.8,
+        dieSpeed: 0.001,
+        radius: 1.5,
+        curlSize: 0.015,
+        attraction: -2.0,
+        tornadoStrength: 3.0,
+        circleRadius: 550,
+        circleHeight: 10,
+
+        //color
+        lightIntensity: 1.0,
+        glowIntensity: 0.2,
+        metalness: 0.3,
+        roughness: 1.0,
+        color1: '#bb00ff',
+        color2: '#f5d6eb',
+        parOpacity: 1.0,
+
+        //scale
+        currentModel: 'flower',
+        currentScene: 'scene3',
+        scaleFactor: 2,
+        varScaleFactor: 0.6,
+        wholeScale: 0.006,
+
+        //glow
+        falloff: 0.0,
+        glowInternalRadius: 0.0,
+        glowColor: '#d400ff',
+        glowSharpness: 0.0,
+        opacity: 0.06,
+    },
+    scene4: {
+        //amount
+        textureWidth: 32,
+        textureHeight: 32,
+
+        //simul
+        speed: 0.75,
+        dieSpeed: 0.004,
+        radius: 0.75,
+        curlSize: 0.015,
+        attraction: -3.0,
+        tornadoStrength: 3.3,
+        circleRadius: 600,
+        circleHeight: 25,
+
+        //color
+        lightIntensity: 1.0,
+        glowIntensity: 0.2,
+        metalness: 0.3,
+        roughness: 1.0,
+        color1: '#fbff00',
+        color2: '#f5d6eb',
+        parOpacity: 1.0,
+
+        //scale
+        currentModel: 'butterfly',
+        currentScene: 'scene4',
+        scaleFactor: 0.3,
+        varScaleFactor: 1.0,
+        wholeScale: 0.006,
+
+        //glow
+        falloff: 0.0,
+        glowInternalRadius: 0.0,
+        glowColor: '#ffa200',
+        glowSharpness: 0.0,
+        opacity: 0.06,
+    },
+};
+
+//frame animation
+const fps = 24;
+const interval = 1000 / fps; // 각 프레임 간의 시간 (밀리초)
+let lastTime = performance.now();
+let frameCount = 0;
+const maxFrame = 2880; 
+let currentSceneLoaded = '';
+let currentParticleMesh = '';
+
+const animationParams = {
+    frame: 0,
+    isPlaying: false,
+};
+
+let TEXTURE_WIDTH = settings.textureWidth;
+let TEXTURE_HEIGHT = settings.textureHeight;
+let AMOUNT = TEXTURE_WIDTH * TEXTURE_HEIGHT;
+
+const models = [];
+const modelNames = ['flower', 'Petal', 'butterfly'];
+const modelPaths = [
+    './src/models/flower.glb', 
+    './src/models/Petal.glb',
+    './src/models/butterfly.glb'
+];
+
+const sceneNames = ['scene1', 'scene2', 'scene3', 'scene4'];
+
+
+let camera, simulCamera, scene, simulScene, renderer, controls, gui;
+const loader = new GLTFLoader();
+
+let time = Date.now();
 let dt;
-let ray = new THREE.Ray();
 
 //particles
 let particleMesh;
-let color1, color2, tmpColor;
-let texture;
-let sphereMesh;
+let glowMesh;
 
 //simulator
-let copyShader, positionShader, textureDefaultPosition, positionRenderTarget, positionRenderTarget2, rotationTexture, scaleTexture, scaleTexture2;
+let copyShader, positionShader, textureDefaultPosition, positionRenderTarget, positionRenderTarget2, rotationTexture, scaleTexture;
 
 let simulMesh;
 let followPoint;
 let followPointTime = 0;
-
-// const TEXTURE_WIDTH = amountInfo[0];
-// const TEXTURE_HEIGHT = amountInfo[1];
-// const AMOUNT = TEXTURE_WIDTH * TEXTURE_HEIGHT;
-
 let initAnimation = 0;
-
-//light
-let shadowDarkness = 0.45;
-let lightMesh;
 
 //instance
 let glbModel;
-let glbMaterial;
-let rotationSpeeds;
 let colorIndices, glowTimings;
 
-const params = {
-    exposure: 1,
-    strength: 5.0,
-    threshold: 0,
-    radius: 1.0,
-};
-
-let composer, sceneTarget, copyPass, combinePass, bloomComposer;
-let renderTarget;
-
-let onARSession = false;
-
+//webXR
 let reticle, controller;
 let hitTestSource = null;
 let hitTestSourceRequested = false;
-
 let lastValidPosition = new THREE.Vector3();
-let instancedMesh;
+
+const video = document.getElementById('video');
+
 init()
 
 function init() {
+    //set Render Scene
+
     scene = new THREE.Scene();
     // scene.background = new THREE.Color( 0x000000 );
 
-    camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set( 0, 10, 8 );
-    // camera.position.set(-440, 380, 800);
-    // camera.position.set( 0, 500, 600 );
-
-    // camera.lookAt(new THREE.Vector3( 0, 0, 0 ))
-    // settings.camera = camera;
-    // settings.cameraPosition = camera.position;
+    camera = new THREE.PerspectiveCamera( 90, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set( -0.3326, 6.2612, 
+        8.2365 );
+    camera.rotation.set( 
+        -0.7213, -0.0254, -0.0223 );
 
     renderer = new THREE.WebGLRenderer({
         antialias : true,
@@ -144,8 +283,6 @@ function init() {
     renderer.autoClear = false;
     renderer.autoClearDepth = false;
 
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    renderer.shadowMap.enabled = true;
     renderer.setPixelRatio( window.devicePixelRatio );
     renderer.setSize( window.innerWidth, window.innerHeight );
     renderer.xr.enabled = true;
@@ -153,36 +290,8 @@ function init() {
 
     document.body.appendChild ( renderer.domElement );
     document.body.appendChild( ARButton.createButton( renderer, { requiredFeatures: [ 'hit-test' ] } ));
-
-    //
-
-    initLight();
-    scene.add(lightMesh);
-    initSimulator();
-    loadGLBModel();
     
-    function onSelect() {
-        if (reticle.visible) {
-            if (!particleMesh) {
-                particleMesh = createParticleMesh();
-            }
-    
-            const position = new THREE.Vector3();
-            const quaternion = new THREE.Quaternion();
-            const scale = new THREE.Vector3();
-    
-            reticle.matrix.decompose(position, quaternion, scale);
-    
-            particleMesh.position.copy(position);
-            instancedMesh.position.copy(position);
-
-            lastValidPosition.copy(position);
-    
-            scene.add(particleMesh);
-            scene.add(instancedMesh);
-
-        }
-    }
+    //webXR
 
     controller = renderer.xr.getController( 0 );
     controller.addEventListener( 'select', onSelect );
@@ -196,126 +305,40 @@ function init() {
     reticle.visible = false;
     scene.add( reticle );
 
+    //light
+
     const defaultLight = new THREE.HemisphereLight( 0xffffff, 0xbbbbff, 3 );
     defaultLight.position.set( 0.5, 1, 0.25 );
     scene.add( defaultLight );
 
-    const loader = new GLTFLoader();
-    // loader.load(
-    //     './src/models/scene3.glb',
-    //     function ( gltf ) {
-    //         let scaleFactor = 1;
-    //         gltf.scene.position.y = -0.5;
-    //         gltf.scene.position.z = 6;
-    //         gltf.scene.scale.set ( scaleFactor, scaleFactor, scaleFactor);
-    //         scene.add( gltf.scene );
-    //     },
-    // );
+    //load GLB Scene 
 
-    const sphereGeometry = new THREE.SphereGeometry(50, 8, 8);
+    // loader.load('./src/models/scene3.glb', function (gltf) {
+    //     glbModel = gltf.scene;
+    //     let scaleFactor = 1;
+    //     glbModel.position.y = -0.5;
+    //     glbModel.position.z = 6;
+    //     glbModel.scale.set(scaleFactor, scaleFactor, scaleFactor);
+    //     scene.add(glbModel);
+    // });
 
-    const sphereMaterial = new THREE.ShaderMaterial({
-        vertexShader: document.getElementById('glowVertex').textContent,
-        fragmentShader: document.getElementById('glowFragment').textContent,
-        uniforms: {
-            resolution: { type: 'v2', value: new THREE.Vector2( TEXTURE_WIDTH, TEXTURE_HEIGHT ) },
-            texturePosition: { value: positionRenderTarget.texture },
-            falloff: { value: 0.0 },
-            glowInternalRadius: { value: 10.0 },
-            glowColor: { value: new THREE.Color("#ffffff") },
-            glowSharpness: { value: 0.0 },
-            opacity: { value: 2.3 },
-            scale: { value: new THREE.Vector3(settings.wholeScale, settings.wholeScale, settings.wholeScale) },
-        },
-        transparent: true,
-        side: THREE.DoubleSide,
-        depthTest: true,
-        depthWrite: false,
-        blending: THREE.AdditiveBlending,
-    });
-    
-    instancedMesh = new THREE.InstancedMesh(sphereGeometry, sphereMaterial, AMOUNT);
-    instancedMesh.scale.set(settings.wholeScale, settings.wholeScale, settings.wholeScale)
-    instancedMesh.renderOrder = 1;
-    scene.add(instancedMesh);
-
-
+    //controls
 
     window.addEventListener('keyup', onKeyUp);
-
     controls = new OrbitControls( camera, renderer.domElement );
     controls.update();
 
-    GUI
-    const gui = new GUI();
+    //GUI
+    initGUI();
 
-    settings.amount = query.amount;
+    //init Simulator & Particles & Glow
+    initSimulator();
+    loadParticlesGLB();
+    initGlowMesh();
 
-    gui.add(settings, 'amount', ['256', '1k', '2k', '4k', '8k', '16k', '32k', '65k', '131k', '252k', '524k', '1m', '2m', '4m'])
-    .onChange(function(value) {
-        const newUrl = new URL(window.location.href);
-        newUrl.searchParams.set('amount', value);
-        window.location.href = newUrl.href;
-    });
-    gui.add( settings, 'speed', 0, 3 );
-    gui.add( settings, 'dieSpeed', 0, 0.05 );
-    gui.add( settings, 'radius', 0, 10 );
-    gui.add( settings, 'curlSize', 0, 0.05 );
-    gui.add( settings, 'attraction', -20, 20 );
-    gui.add( settings, 'tornadoStrength', 0.0, 20.0 );
-    gui.add( settings, 'lightIntensity', 0.0, 5.0 );
-    gui.add( settings, 'glowIntensity', 0.0, 1.0 );
-    gui.add( settings, 'metalness', 0.0, 1.0 );
-    gui.add( settings, 'roughness', 0.0, 1.0 );
-    gui.addColor( settings, 'color1' );
-    gui.addColor( settings, 'color2' );
-
-    gui.add(settings, 'currentModel', modelNames).name('Model').onChange(function(value) {
-        const modelIndex = modelNames.indexOf(value);
-        updateParticleMesh(models[modelIndex]);
-    });
-
-    gui.add(settings, 'scaleFactor', 0, 20).name('Scale Factor').onChange(function(value) {
-        updateScaleTexture();
-    });
-
-    gui.add(settings, 'varScaleFactor', 0, 1).name('Var Scale Factor').onChange(function(value) {
-        updateScaleTexture();
-    });
-
-    gui.add( settings, 'wholeScale', 0.0, 0.1 );
-
-    gui.add(settings, 'textureWidth', 1, 64, 1).name('Texture Width').onChange(updateTextureDimensions);
-    gui.add(settings, 'textureHeight', 1, 64, 1).name('Texture Height').onChange(updateTextureDimensions);
-
-    gui.add( settings, 'circleRadius', 0, 1000, 1);
-    gui.add( settings, 'circleHeight', 0, 100, 1 );
-
-    gui.add( settings, 'falloff', 0, 10);
-    gui.add( settings, 'glowInternalRadius', 0, 10);
-    gui.addColor( settings, 'glowColor' );
-    gui.add( settings, 'glowSharpness', 0, 10);
-    gui.add( settings, 'opacity', 0, 1);
-
-    gui.add( settings, 'amountNum', 0, 2048, 1).onChange(function() {
-        updateParticleMesh(models[currentModelIndex]);
-    });
-
-
-
-    time = Date.now();
     animate();
-}
-
-function updateTextureDimensions() {
-    TEXTURE_WIDTH = settings.textureWidth;
-    TEXTURE_HEIGHT = settings.textureHeight;
-    AMOUNT = TEXTURE_WIDTH * TEXTURE_HEIGHT;
-
-    // Reinitialize the simulator and particle system with new dimensions
-    // initSimulator();
-    updatePositionRenderTarget();
-    updateParticleMesh(models[currentModelIndex]);
+    requestAnimationFrame(frameAnimation);
+    setInterval(logFPS, 1000);
 }
 
 //#########SIMULATION##########
@@ -382,27 +405,21 @@ function initSimulator() {
     scaleTexture = createScaleTexture();
 }
 
-function updatePositionRenderTarget() {
-    positionRenderTarget = new THREE.WebGLRenderTarget(TEXTURE_WIDTH, TEXTURE_HEIGHT, {
-        wrapS: THREE.ClampToEdgeWrapping,
-        wrapT: THREE.ClampToEdgeWrapping,
-        minFilter: THREE.NearestFilter,
-        magFilter: THREE.NearestFilter,
-        format: THREE.RGBAFormat,
-        type: THREE.FloatType,
-        depthWrite: false,
-        depthBuffer: false,
-        stencilBuffer: false
-    });
-    positionRenderTarget2 = positionRenderTarget.clone();
-}
-
-function copyTexture(input, output) {
+function copyTexture(inputTexture, outputRenderTarget) {
     simulMesh.material = copyShader;
-    copyShader.uniforms.texture.value = input.texture;
-    renderer.setRenderTarget( output );
-    renderer.render( simulScene, simulCamera );
-    renderer.setRenderTarget(null);
+    copyShader.uniforms.texture.value = inputTexture;
+
+    var currentRenderTarget = renderer.getRenderTarget();
+    var currentXrEnabled = renderer.xr.enabled;
+
+    renderer.xr.enabled = false;
+
+    renderer.setRenderTarget(outputRenderTarget);
+    renderer.clear();
+    renderer.render(simulScene, simulCamera);
+
+    renderer.xr.enabled = currentXrEnabled;
+    renderer.setRenderTarget(currentRenderTarget);
 }
 
 function createPositionTexture() {
@@ -430,21 +447,6 @@ function createPositionTexture() {
     return texture;
 }
 
-function createRotationTexture() {
-    const rotations = new Float32Array(AMOUNT * 4);
-    for (let i = 0; i < AMOUNT; i++) {
-        rotations[i * 4 + 0] = Math.random() * 2.0 * Math.PI;
-        rotations[i * 4 + 1] = Math.random() * 2.0 * Math.PI; 
-        rotations[i * 4 + 2] = Math.random() * 2.0 * Math.PI; 
-        rotations[i * 4 + 3] = Math.random(); 
-    }
-    const texture = new THREE.DataTexture(rotations, TEXTURE_WIDTH, TEXTURE_HEIGHT, THREE.RGBAFormat, THREE.FloatType);
-    texture.needsUpdate = true;
-    texture.generateMipmaps = false;
-    texture.flipY = false;
-    return texture;
-}
-
 function createScaleTexture(varScaleFactor, scaleFactor) {
     const scales = new Float32Array(AMOUNT * 4);
     for (let i = 0; i < AMOUNT; i++) {
@@ -460,6 +462,21 @@ function createScaleTexture(varScaleFactor, scaleFactor) {
     return texture;
 }
 
+function createRotationTexture() {
+    const rotations = new Float32Array(AMOUNT * 4);
+    for (let i = 0; i < AMOUNT; i++) {
+        rotations[i * 4 + 0] = Math.random() * 2.0 * Math.PI;
+        rotations[i * 4 + 1] = Math.random() * 2.0 * Math.PI; 
+        rotations[i * 4 + 2] = Math.random() * 2.0 * Math.PI; 
+        rotations[i * 4 + 3] = Math.random(); 
+    }
+    const texture = new THREE.DataTexture(rotations, TEXTURE_WIDTH, TEXTURE_HEIGHT, THREE.RGBAFormat, THREE.FloatType);
+    texture.needsUpdate = true;
+    texture.generateMipmaps = false;
+    texture.flipY = false;
+    return texture;
+}
+
 function updateSimulator(dt) {
     if(settings.speed || settings.dieSpeed) {
         let r = settings.circleRadius;
@@ -468,9 +485,10 @@ function updateSimulator(dt) {
         let autoClearColor = renderer.autoClearColor;
         renderer.autoClearColor = false;
 
-        const deltaRatio = dt / 16.6667;
+        // const deltaRatio = dt / 16.6667;
+        const deltaRatio = 1;
 
-        positionShader.uniforms.resolution.value = new THREE.Vector2( settings.textureWidth, settings.textureHeight ),
+        positionShader.uniforms.resolution.value = new THREE.Vector2( TEXTURE_WIDTH, TEXTURE_HEIGHT ),
         positionShader.uniforms.speed.value = settings.speed * deltaRatio;
         positionShader.uniforms.dieSpeed.value = settings.dieSpeed * deltaRatio;
         positionShader.uniforms.radius.value = settings.radius;
@@ -479,7 +497,7 @@ function updateSimulator(dt) {
         positionShader.uniforms.initAnimation.value = initAnimation;
         positionShader.uniforms.tornadoStrength.value = settings.tornadoStrength;
         
-        copyShader.uniforms.resolution.value = new THREE.Vector2( settings.textureWidth, settings.textureHeight ),
+        copyShader.uniforms.resolution.value = new THREE.Vector2( TEXTURE_WIDTH, TEXTURE_HEIGHT ),
 
         // positionShader.uniforms.mouse3d.value.copy(settings.mouse3d);
         // followPointTime += dt * 0.001 * settings.speed;
@@ -517,52 +535,116 @@ function updatePosition(dt) {
 
     var currentRenderTarget = renderer.getRenderTarget();
     var currentXrEnabled = renderer.xr.enabled;
-    var currentShadowAutoUpdate = renderer.shadowMap.autoUpdate;
 
     renderer.xr.enabled = false;
-    renderer.shadowMap.autoUpdate = false;
 
     renderer.setRenderTarget(positionRenderTarget);
     renderer.clear();
     renderer.render(simulScene, simulCamera);
 
     renderer.xr.enabled = currentXrEnabled;
-    renderer.shadowMap.autoUpdate = currentShadowAutoUpdate;
     renderer.setRenderTarget(currentRenderTarget);
 }
 
-//##########PARTICLES#############
-function loadGLBModel() {
-    const loader = new GLTFLoader();
-    const modelPaths = ['./src/models/flower2.glb', './src/models/flower.glb', './src/models/Petal1.glb'];
+function updateTexture() {
+    TEXTURE_WIDTH = settings.textureWidth;
+    TEXTURE_HEIGHT = settings.textureHeight;
+    AMOUNT = TEXTURE_WIDTH * TEXTURE_HEIGHT;
 
+    // Update the simulator render target
+    const oldPositionRenderTarget = positionRenderTarget;
+    const oldPositionRenderTarget2 = positionRenderTarget2;
+
+    positionRenderTarget = new THREE.WebGLRenderTarget(TEXTURE_WIDTH, TEXTURE_HEIGHT, {
+        wrapS: THREE.ClampToEdgeWrapping,
+        wrapT: THREE.ClampToEdgeWrapping,
+        minFilter: THREE.NearestFilter,
+        magFilter: THREE.NearestFilter,
+        format: THREE.RGBAFormat,
+        type: THREE.FloatType,
+        depthWrite: false,
+        depthBuffer: false,
+        stencilBuffer: false
+    });
+    positionRenderTarget2 = positionRenderTarget.clone();
+
+    copyTexture(oldPositionRenderTarget.texture, positionRenderTarget);
+    copyTexture(oldPositionRenderTarget2.texture, positionRenderTarget2);
+
+    // Update the scale texture
+    updateScaleTexture();
+
+    // Update the particle mesh
+    const modelIndex = modelNames.indexOf(settings.currentModel);
+    updateParticleMesh(models[modelIndex]);
+}
+
+function updateScaleTexture() {
+    const scales = new Float32Array(AMOUNT * 4);
+    for (let i = 0; i < AMOUNT; i++) {
+        scales[i * 4 + 0] = Math.random() * settings.varScaleFactor + settings.scaleFactor;
+        scales[i * 4 + 1] = 0.0;
+        scales[i * 4 + 2] = 0.0;
+        scales[i * 4 + 3] = 1.0;
+    }
+    const texture = new THREE.DataTexture(scales, TEXTURE_WIDTH, TEXTURE_HEIGHT, THREE.RGBAFormat, THREE.FloatType);
+    texture.needsUpdate = true;
+    texture.generateMipmaps = false;
+    texture.flipY = false;
+
+    if (particleMesh) {
+        particleMesh.material.uniforms.textureScale.value = texture;
+    }
+    if (glowMesh) {
+        glowMesh.material.uniforms.textureScale.value = texture;
+    }
+}
+
+//##########PARTICLES#############
+function loadParticlesGLB() {
+    const loader = new GLTFLoader();
     modelPaths.forEach(path => {
         loader.load(path, function(gltf) {
-            const model = gltf.scene.children[0];
-            models.push(model);
+            if (path === './src/models/butterfly.glb') {
+                gltf.scene.children.forEach(child => {
+                    models.push(child);
+                });
+
+            } else {
+                const model = gltf.scene.children[0];
+                models.push(model);
+            }
             console.log(`${path} loaded and added to models array.`);
 
-            if (models.length === modelPaths.length) {
+            if (models.length >= modelPaths.length) {
                 initParticles();
             }
         });
     });
+    console.log(models)
 }
 
-//##########입자#############
 function initParticles() {
     if (models.length === 0) {
         console.error("No GLB models have been loaded.");
         return;
     }
-    const glbModel = models[currentModelIndex];
+    const glbModel = models[modelNames.indexOf(settings.currentModel)];
+
     particleMesh = createParticleMesh(glbModel);
     particleMesh.renderOrder = 2;
     scene.add(particleMesh);
 }
 
 function createParticleMesh(model) {
-    const geometry = model.geometry;
+    const geometries = [];
+    model.traverse((child) => {
+        if (child.isMesh) {
+            geometries.push(child.geometry);
+        }
+    });
+    const mergedGeometry = BufferGeometryUtils.mergeGeometries(geometries);
+    // const geometry = model.geometry;
     const material = new THREE.ShaderMaterial({
         vertexShader: document.getElementById('vertexShader').textContent,
         fragmentShader: document.getElementById('fragmentShader').textContent,
@@ -579,33 +661,147 @@ function createParticleMesh(model) {
             metalness: { value: 0.0 },
             roughness: { value: 1.0 }, 
             glowIntensity: { value: 1.0 }, 
+            meshPosition: { value: new THREE.Vector3() },
+            opacity: { value: settings.parOpacity }
         },
         transparent: true,
         side: THREE.DoubleSide,
         depthTest: false,
         depthWrite: false,
     });
-    const mesh = new THREE.InstancedMesh(geometry, material, settings.amountNum);
-    mesh.receiveShadow = true;
+    const mesh = new THREE.InstancedMesh(mergedGeometry, material, AMOUNT);
 
-    colorIndices = new Float32Array(settings.amountNum);
-    glowTimings = new Float32Array(settings.amountNum);  
+    colorIndices = new Float32Array(AMOUNT);
+    glowTimings = new Float32Array(AMOUNT);  
 
-    for (let i = 0; i < settings.amountNum; i++) {
+    for (let i = 0; i < AMOUNT; i++) {
         colorIndices[i] = Math.random();
         glowTimings[i] = Math.random() * 100.0;
     }
 
-    geometry.setAttribute('colorIndex', new THREE.InstancedBufferAttribute(colorIndices, 1));
-    geometry.setAttribute('glowTiming', new THREE.InstancedBufferAttribute(glowTimings, 1)); 
+    mergedGeometry.setAttribute('colorIndex', new THREE.InstancedBufferAttribute(colorIndices, 1));
+    mergedGeometry.setAttribute('glowTiming', new THREE.InstancedBufferAttribute(glowTimings, 1)); 
 
+    if (animationParams.frame >= 2160) {
+        const fixedRotation = new Float32Array(AMOUNT * 4);
+        for (let i = 0; i < AMOUNT; i++) {
+            fixedRotation[i * 4 + 0] = Math.PI / 2;
+            fixedRotation[i * 4 + 1] = 0;
+            fixedRotation[i * 4 + 2] = 0;
+            fixedRotation[i * 4 + 3] = Math.random();
+        }
+        const fixedRotationTexture = new THREE.DataTexture(fixedRotation, TEXTURE_WIDTH, TEXTURE_HEIGHT, THREE.RGBAFormat, THREE.FloatType);
+        fixedRotationTexture.needsUpdate = true;
+        fixedRotationTexture.generateMipmaps = false;
+        fixedRotationTexture.flipY = false;
+        mesh.material.uniforms.textureRotation.value = fixedRotationTexture;
+
+        const butterflyVertexShader = `
+        uniform sampler2D texturePosition;
+        uniform sampler2D textureRotation;
+        uniform sampler2D textureScale;
+        uniform vec2 resolution;
+        uniform float time;
+        uniform vec3 meshPosition; // Add this uniform
+        attribute float colorIndex;
+        attribute float glowTiming;
+        varying float vColorIndex;
+        varying vec3 vNormal;
+        varying vec3 vPosition;
+        varying float vGlowTiming;
+        
+        mat3 rotationMatrix(vec3 rotation) {
+            float cosX = cos(rotation.x);
+            float sinX = sin(rotation.x);
+            float cosY = cos(rotation.y);
+            float sinY = sin(rotation.y);
+            float cosZ = cos(rotation.z);
+            float sinZ = sin(rotation.z);
+        
+            mat3 rotX = mat3(
+                1.0, 0.0, 0.0,
+                0.0, cosX, -sinX,
+                0.0, sinX, cosX
+            );
+        
+            mat3 rotY = mat3(
+                cosY, 0.0, sinY,
+                0.0, 1.0, 0.0,
+                -sinY, 0.0, cosY
+            );
+        
+            mat3 rotZ = mat3(
+                cosZ, -sinZ, 0.0,
+                sinZ, cosZ, 0.0,
+                0.0, 0.0, 1.0
+            );
+        
+            return rotZ * rotY * rotX;
+        }
+        
+        mat3 lookAt(vec3 direction, vec3 up) {
+            vec3 z = normalize(direction);
+            vec3 x = normalize(cross(up, z));
+            vec3 y = cross(z, x);
+        
+            return mat3(x, y, z);
+        }
+        
+        void main() {
+            vColorIndex = colorIndex;
+            vGlowTiming = glowTiming;
+        
+            vNormal = normalize(normalMatrix * normal);
+        
+            vec2 uv = vec2(gl_InstanceID % int(resolution.x), gl_InstanceID / int(resolution.x)) / resolution;
+            vec4 positionInfo = texture2D(texturePosition, uv);
+            vec3 positionOffset = positionInfo.xyz;
+            vec3 rotationAngles = texture2D(textureRotation, uv).xyz;
+            float baseScale = texture2D(textureScale, uv).r;
+        
+            float life = positionInfo.a;
+            float scale = baseScale * smoothstep(0.0, 0.5, life);
+        
+            vec3 rotatedPosition;
+            vec3 direction = normalize(meshPosition - positionOffset);
+            vec3 up = vec3(0.0, 1.0, 0.0);
+            if (rotationAngles.x == ${Math.PI / 2}) { 
+                mat3 lookAtMatrix = lookAt(direction, up);
+                rotatedPosition = lookAtMatrix * (position * scale);
+            } else {
+                vec3 timeRotation = rotationAngles + time * vec3(0.1, 0.2, 0.3);
+                mat3 rotationMat = rotationMatrix(timeRotation);
+                rotatedPosition = rotationMat * position * scale;
+            }
+        
+            vec3 transformedPosition = rotatedPosition + positionOffset;
+        
+            vPosition = (modelViewMatrix * vec4(transformedPosition, 1.0)).xyz;
+            vec4 mvPosition = modelViewMatrix * vec4(transformedPosition, 1.0);
+            gl_Position = projectionMatrix * mvPosition;
+        }
+        `;
+        mesh.material.vertexShader = butterflyVertexShader;
+        mesh.material.needsUpdate = true;
+    }
+    
     return mesh;
+}
+
+function updateParticleMesh(model) {
+    if (particleMesh && glowMesh) {
+        scene.remove(particleMesh);
+        scene.remove(glowMesh);
+    }
+    particleMesh = createParticleMesh(model);
+    scene.add(particleMesh);
+    initGlowMesh()
 }
 
 function updateParticles(dt) {
     if (!particleMesh) return;
 
-    particleMesh.material.uniforms.resolution.value = new THREE.Vector2( settings.textureWidth, settings.textureHeight );
+    particleMesh.material.uniforms.resolution.value = new THREE.Vector2( TEXTURE_WIDTH, TEXTURE_HEIGHT );
     particleMesh.material.uniforms.texturePosition.value = positionRenderTarget.texture;
     particleMesh.material.uniforms.time.value += dt * 0.01;;
     particleMesh.material.uniforms.color1.value = new THREE.Color(settings.color1);
@@ -614,66 +810,51 @@ function updateParticles(dt) {
     particleMesh.material.uniforms.glowIntensity.value = Math.sin(time * 0.01) * settings.glowIntensity;
     particleMesh.material.uniforms.metalness.value = settings.metalness;
     particleMesh.material.uniforms.roughness.value = settings.roughness;
+    particleMesh.material.uniforms.opacity.value = settings.parOpacity;
+
     particleMesh.scale.set(settings.wholeScale, settings.wholeScale, settings.wholeScale);
     particleMesh.material.uniformsNeedUpdate = true;
 
-    instancedMesh.material.uniforms.resolution.value = new THREE.Vector2( settings.textureWidth, settings.textureHeight );
-    instancedMesh.material.uniforms.texturePosition.value = positionRenderTarget.texture;
-    instancedMesh.material.uniforms.falloff.value = settings.falloff;
-    instancedMesh.material.uniforms.glowInternalRadius.value = settings.glowInternalRadius;
-    instancedMesh.material.uniforms.glowColor.value = new THREE.Color(settings.glowColor);
-    instancedMesh.material.uniforms.glowSharpness.value = settings.glowSharpness;
-    instancedMesh.material.uniforms.opacity.value = settings.opacity;
-    instancedMesh.material.uniforms.scale.value = new THREE.Vector3(settings.wholeScale, settings.wholeScale, settings.wholeScale);
-    instancedMesh.scale.set(settings.wholeScale, settings.wholeScale, settings.wholeScale);
+    glowMesh.material.uniforms.resolution.value = new THREE.Vector2( TEXTURE_WIDTH, TEXTURE_HEIGHT );
+    glowMesh.material.uniforms.texturePosition.value = positionRenderTarget.texture;
+    glowMesh.material.uniforms.falloff.value = settings.falloff;
+    glowMesh.material.uniforms.glowInternalRadius.value = settings.glowInternalRadius;
+    glowMesh.material.uniforms.glowColor.value = new THREE.Color(settings.glowColor);
+    glowMesh.material.uniforms.glowSharpness.value = settings.glowSharpness;
+    glowMesh.material.uniforms.opacity.value = settings.opacity;
+    glowMesh.material.uniforms.scale.value = new THREE.Vector3(settings.wholeScale, settings.wholeScale, settings.wholeScale);
+    glowMesh.scale.set(settings.wholeScale, settings.wholeScale, settings.wholeScale);
 
-    instancedMesh.instanceMatrix.needsUpdate = true;
+    glowMesh.instanceMatrix.needsUpdate = true;
 }
 
-function updateScaleTexture() {
-    particleMesh.material.uniforms.textureScale.value = createScaleTexture(settings.varScaleFactor, settings.scaleFactor);
-    particleMesh.material.uniforms.textureScale.needsUpdate = true;
-}
-
-
-function updateParticleMesh(model) {
-    if (particleMesh) {
-        scene.remove(particleMesh);
-    }
-    particleMesh = createParticleMesh(model);
-    particleMesh.position.set(0, 0, 0);
-    const scaleFator = 0.011;
-    particleMesh.scale.set(scaleFator, scaleFator, scaleFator);
-    scene.add(particleMesh);
-}
-
-//##########LIGHT##########
-function initLight() {
-
-    lightMesh = new THREE.Object3D();
-    lightMesh.position.set(0, 500, 0);
-
-    const ambient = new THREE.AmbientLight( 0x333333 );
-    lightMesh.add( ambient );
-
-    const pointLight = new THREE.PointLight( 0xffffff, 1000, 1000, 1 );
-    pointLight.castShadow = true;
-    pointLight.shadow.camera.near = 1;
-    pointLight.shadow.camera.far = 700;
-    pointLight.shadow.bias = 0.1; 
-    pointLight.shadow.mapSize.width = 4096;
-    pointLight.shadow.mapSize.height = 2048; 
+function initGlowMesh() {
+    const sphereGeometry = new THREE.SphereGeometry(10, 8, 8);
+    const sphereMaterial = new THREE.ShaderMaterial({
+        vertexShader: document.getElementById('glowVertex').textContent,
+        fragmentShader: document.getElementById('glowFragment').textContent,
+        uniforms: {
+            resolution: { type: 'v2', value: new THREE.Vector2( TEXTURE_WIDTH, TEXTURE_HEIGHT ) },
+            texturePosition: { value: positionRenderTarget.texture },
+            textureScale: { value: createScaleTexture(settings.varScaleFactor, settings.scaleFactor) }, 
+            falloff: { value: 0.0 },
+            glowInternalRadius: { value: 10.0 },
+            glowColor: { value: new THREE.Color("#ffffff") },
+            glowSharpness: { value: 0.0 },
+            opacity: { value: 2.3 },
+            scale: { value: new THREE.Vector3(settings.wholeScale, settings.wholeScale, settings.wholeScale) },
+        },
+        transparent: true,
+        side: THREE.DoubleSide,
+        depthTest: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+    });
     
-    lightMesh.add( pointLight );
-
-    const directionalLight = new THREE.DirectionalLight( 0xba8b8b, 0.5 );
-    directionalLight.position.set( 1, 1, 1 );
-    lightMesh.add( directionalLight );
-
-    const directionalLight2 = new THREE.DirectionalLight( 0x8bbab4, 0.3 );
-    directionalLight2.position.set( 1, 1, -1 );
-    lightMesh.add( directionalLight2 );
-
+    glowMesh = new THREE.InstancedMesh(sphereGeometry, sphereMaterial, AMOUNT);
+    glowMesh.scale.set(settings.wholeScale, settings.wholeScale, settings.wholeScale)
+    glowMesh.renderOrder = 1;
+    scene.add(glowMesh);
 }
 
 function animate() {
@@ -682,12 +863,13 @@ function animate() {
   
 function render(timestamp, frame) {
     controls.update();
+
+    
     let newTime = Date.now();
     dt = newTime - time;
     time = newTime;
 
     initAnimation = Math.min(initAnimation + dt * 0.00025, 1);
-    // lightUpdate(dt, camera);
     updateSimulator(dt);
     updateParticles(dt);
 
@@ -718,14 +900,251 @@ function render(timestamp, frame) {
             }
         }
     }
-    if (!reticle.visible && particleMesh && instancedMesh) {
+
+    if (!reticle.visible && particleMesh && glowMesh) {
         particleMesh.position.copy(lastValidPosition);
-        instancedMesh.position.copy(lastValidPosition);
+        glowMesh.position.copy(lastValidPosition);
     }
+
     scene.traverse( function( object ) {
         object.frustumCulled = false;
     } );
     renderer.render( scene, camera );
+}
+
+//##########frame animation############
+function frameAnimation() {
+    if (animationParams.isPlaying && animationParams.frame < maxFrame) {
+        requestAnimationFrame(frameAnimation);
+    }
+    const now = performance.now();
+    const deltaTime = now - lastTime;
+
+    if (deltaTime >= interval) {
+        animationParams.frame += 1;
+        frameCount += 1;
+        lastTime = now - (deltaTime % interval);
+    }
+    // checkAndLoadScene(animationParams.frame);
+    checkAndLoadParticleMesh(animationParams.frame);
+
+    if (animationParams.isPlaying) {
+        if (animationParams.frame < 720) {
+            if (animationParams.frame < 100) {
+                if (settings.parOpacity <= 1.0 ){
+                    settings.parOpacity += 0.01;  
+                }
+                if (settings.opacity < 0.005  ){
+                    settings.opacity += 0.0001;  
+                }
+            }
+
+            if (settings.scaleFactor <= 0.6 ) {
+                settings.scaleFactor += 0.002; 
+                updateScaleTexture();
+            }
+
+            if (settings.circleRadius < 600 ) {
+                settings.circleRadius += 1; 
+            }
+            if (settings.speed > 0.75 ) {
+                settings.speed -= 0.002; 
+            }
+
+            if (animationParams.frame > 600) {
+                if (settings.parOpacity >= 0.0 ){
+                    settings.parOpacity -= 0.005; 
+                }
+                if (settings.opacity >= 0.0 ){
+                    settings.opacity -= 0.00001; 
+                }
+            }
+        }
+        if (animationParams.frame >= 720 && animationParams.frame < 1440) {
+            if(animationParams.frame === 720) {
+                settings.textureWidth= 32;
+                settings.textureHeight = 32;
+                settings.color1 = '#f8c75d';
+                settings.color2 = '#ebd6f5';
+                settings.glowColor = '#ff7b00';
+                settings.dieSpeed = 0;
+                updateTexture();
+            }
+            if (settings.speed >= 0.3 ) {
+                settings.speed -= 0.001; 
+            }
+
+            if (settings.radius <= 10.0 ) {
+                settings.radius += 0.02; 
+            }
+            if (settings.circleRadius <= 1000 ) {
+                settings.circleRadius += 1; 
+            }
+            if (settings.opacity <= 0.012 ) {
+                settings.opacity += 0.0001; 
+            }
+
+
+            if (animationParams.frame < 1320) {
+                if (settings.parOpacity <= 1.0){
+                    settings.parOpacity += 0.002;
+                }
+                if (settings.opacity < 0.012 ){
+                    settings.opacity += 0.0001; 
+                }
+            }
+            if (animationParams.frame >= 1320) {
+                if (settings.parOpacity >= 0.0 ){
+                    settings.parOpacity -= 0.005; 
+                }
+                if (settings.opacity >= 0.0 ){
+                    settings.opacity -= 0.0001; 
+                }
+            }
+        }
+        
+        if (animationParams.frame >= 1440 && animationParams.frame < 2160) {
+            if(animationParams.frame === 1440) {
+                checkAndLoadParticleMesh(animationParams.frame);
+                settings.color1 = '#bb00ff';
+                settings.color2 = '#f5d6eb';
+                settings.varScaleFactor = 0.6;
+                settings.glowColor = '#d400ff';
+                settings.dieSpeed = 0.001; 
+                settings.radius = 1.5;
+                settings.speed = 0.8;
+                settings.tornadoStrength = 3.0;
+                settings.circleRadius = 550;
+                settings.circleHeight = 10;
+                settings.lightIntensity = 1.0;
+                settings.scaleFactor = 2.0;
+                updateScaleTexture();
+            }
+
+            if (animationParams.frame < 2040) {
+                if (settings.parOpacity <= 1.0){
+                    settings.parOpacity += 0.005;
+                }
+                if (settings.opacity < 0.06 ){
+                    settings.opacity += 0.00005; 
+                }
+            }
+            if (animationParams.frame >= 2040) {
+                if (settings.parOpacity >= 0.0 ){
+                    settings.parOpacity -= 0.005; 
+                }
+                if (settings.opacity >= 0.0 ){
+                    settings.opacity -= 0.0001; 
+                }
+            }
+        }
+
+        if (animationParams.frame >= 2160) {
+            if(animationParams.frame === 2160) {
+                settings.currentModel = 'butterfly';
+                checkAndLoadParticleMesh(animationParams.frame);
+                settings.color1 = '#fbff00';
+                settings.color2 = '#f5d6eb';
+                settings.varScaleFactor = 1.0;
+                settings.glowColor = '#ffa200';
+                settings.dieSpeed = 0.004; 
+                settings.radius = 0.75;
+                settings.speed = 0.75;
+                settings.attraction = -3.0;
+                settings.tornadoStrength = 3.3;
+                settings.circleRadius = 600;
+                settings.circleHeight = 25;
+                settings.lightIntensity = 1.0;
+                settings.scaleFactor = 0.3;
+                updateScaleTexture();
+            }
+
+            if (animationParams.frame < 2760) {
+                if (settings.parOpacity <= 1.0){
+                    settings.parOpacity += 0.005;
+                }
+                if (settings.opacity < 0.06 ){
+                    settings.opacity += 0.00005; 
+                }
+            }
+            if (animationParams.frame >= 2760) {
+                if (settings.parOpacity >= 0.0 ){
+                    settings.parOpacity -= 0.007; 
+                }
+                if (settings.opacity >= -0.9999 ){
+                    settings.opacity -= 0.0002; 
+                }
+            }
+        }
+
+    }
+}
+
+function logFPS() {
+    console.log(`${frameCount} fps`);
+    frameCount = 0; 
+}
+
+function playAnimation() {
+    if (!animationParams.isPlaying) {
+        animationParams.isPlaying = true;
+        lastTime = performance.now();
+        frameAnimation();
+        // video.play();
+    }
+}
+
+function stopAnimation() {
+    animationParams.isPlaying = false;
+}
+
+function resetAnimation() {
+    animationParams.isPlaying = false;
+    animationParams.frame = 0;
+    currentSceneLoaded = '';
+}
+
+function checkAndLoadScene(frame) {
+    let sceneToLoad = '';
+    if (frame >= 0 && frame < 720) {
+        sceneToLoad = 'scene1';
+    } else if (frame >= 720 && frame < 1440) {
+        sceneToLoad = 'scene2';
+    } else if (frame >= 1440 && frame < 2160) {
+        sceneToLoad = 'scene3';
+    } else if (frame >= 2160 && frame < 2880) {
+        sceneToLoad = 'scene4';
+    }
+
+    if (sceneToLoad && sceneToLoad !== currentSceneLoaded) {
+        loadGLBScene(sceneToLoad);
+        currentSceneLoaded = sceneToLoad;
+    }
+}
+
+function checkAndLoadParticleMesh(frame) {
+    let meshToLoad = '';
+    if (frame >= 0 && frame < 720) {
+        meshToLoad = 'Petal';
+    } else if (frame >= 720 && frame < 1440) {
+        meshToLoad = 'Petal';
+    } else if (frame >= 1440 && frame < 2160) {
+        meshToLoad = 'flower';
+    } else if (frame >= 2160 && frame < 2880) {
+        meshToLoad = 'butterfly';
+    }
+
+    if (meshToLoad && meshToLoad !== currentParticleMesh) {
+        loadParticleMesh(meshToLoad);
+        currentParticleMesh = meshToLoad;
+    }
+}
+
+function loadParticleMesh(modelName) {
+    const modelIndex = modelNames.indexOf(modelName);
+    if (modelIndex !== -1) {
+        updateParticleMesh(models[modelIndex]);
+    }
 }
 
 //#########EVENT LISTENER#############
@@ -736,6 +1155,31 @@ function onKeyUp(evt) {
     }
 }
 
+function onSelect() {
+    if (reticle.visible) {
+        if (!particleMesh) {
+            particleMesh = createParticleMesh();
+        }
+
+        const position = new THREE.Vector3();
+        const quaternion = new THREE.Quaternion();
+        const scale = new THREE.Vector3();
+
+        reticle.matrix.decompose(position, quaternion, scale);
+
+        playAnimation();
+
+        particleMesh.position.copy(position);
+        glowMesh.position.copy(position);
+
+        lastValidPosition.copy(position);
+
+        scene.add(particleMesh);
+        scene.add(glowMesh);
+
+    }
+}
+
 renderer.xr.addEventListener( 'sessionstart', function ( event ) {
     console.log('onAR')
 } );
@@ -743,3 +1187,149 @@ renderer.xr.addEventListener( 'sessionstart', function ( event ) {
 renderer.xr.addEventListener( 'sessionend', function ( event ) {
     console.log('offAR')
 } );
+
+function loadGLBScene(modelName) {
+    const modelPaths = {
+        'scene1': './src/models/scene1.glb',
+        'scene2': './src/models/scene2.glb',
+        'scene3': './src/models/scene3.glb',
+        'scene4': './src/models/scene4.glb'
+    };
+
+    // Clear existing models
+    if (glbModel) {
+        scene.remove(glbModel);
+    }
+
+    loader.load(modelPaths[modelName], function (gltf) {
+        glbModel = gltf.scene;
+        let scaleFactor = 1;
+        glbModel.position.y = -0.5;
+        glbModel.position.z = 6;
+        glbModel.scale.set(scaleFactor, scaleFactor, scaleFactor);
+        scene.add(glbModel);
+    });
+}
+
+function initGUI() {
+    gui = new GUI();
+
+    const animationFolder = gui.addFolder( 'animation' );
+    // const presetFolder = gui.addFolder('Presets');
+    // const saveFolder = gui.addFolder('Save Presets');
+    const amountFolder = gui.addFolder( 'amount' );
+    const simulFolder = gui.addFolder( 'simul' );
+    const modelFolder = gui.addFolder( 'model' );
+    const colorFolder = gui.addFolder( 'color' );
+    const scaleFolder = gui.addFolder( 'scale' );
+    const glowFolder = gui.addFolder( 'glow' );
+
+    animationFolder.add( animationParams, 'frame', 1, 2880, 1 ).listen();
+    animationFolder.add({ play: playAnimation }, 'play').name('Play');
+    animationFolder.add({ stop: stopAnimation }, 'stop').name('Stop');
+    animationFolder.add({ reset: resetAnimation }, 'reset').name('Reset')    
+
+    // presetFolder.add({ preset1: () => loadPreset('scene1') }, 'preset1').name('Load scene1');
+    // presetFolder.add({ preset2: () => loadPreset('scene2') }, 'preset2').name('Load scene2');
+    // presetFolder.add({ preset3: () => loadPreset('scene3') }, 'preset3').name('Load scene3');
+    // presetFolder.add({ preset4: () => loadPreset('scene4') }, 'preset4').name('Load scene4');
+
+    // saveFolder.add({ savePreset1: () => savePreset('scene1') }, 'savePreset1').name('Save scene1');
+    // saveFolder.add({ savePreset2: () => savePreset('scene2') }, 'savePreset2').name('Save scene2');
+    // saveFolder.add({ savePreset3: () => savePreset('scene3') }, 'savePreset3').name('Save scene3');
+    // saveFolder.add({ savePreset4: () => savePreset('scene4') }, 'savePreset4').name('Save scene4');
+
+    amountFolder.add( settings, 'textureWidth', 1, 64, 1)
+    .listen()
+    .onChange(function() {
+        updateTexture();
+    });
+    amountFolder.add( settings, 'textureHeight', 1, 64, 1)
+    .listen()
+    .onChange(function() {
+        updateTexture();
+    });
+    
+    simulFolder.add( settings, 'speed', 0, 3 ).listen();
+    simulFolder.add( settings, 'dieSpeed', 0, 0.05 ).listen();
+    simulFolder.add( settings, 'radius', 0, 10 ).listen();
+    simulFolder.add( settings, 'curlSize', 0, 0.05 ).listen();
+    simulFolder.add( settings, 'attraction', -20, 20 ).listen();
+    simulFolder.add( settings, 'tornadoStrength', 0.0, 20.0 ).listen();
+    simulFolder.add( settings, 'circleRadius', 0, 1000, 1).listen();
+    simulFolder.add( settings, 'circleHeight', 0, 100, 1 ).listen();
+    
+    colorFolder.add( settings, 'lightIntensity', 0.0, 5.0 ).listen();
+    colorFolder.add( settings, 'glowIntensity', 0.0, 1.0 ).listen();
+    colorFolder.add( settings, 'metalness', 0.0, 1.0 ).listen();
+    colorFolder.add( settings, 'roughness', 0.0, 1.0 ).listen();
+    colorFolder.addColor( settings, 'color1' ).listen();
+    colorFolder.addColor( settings, 'color2' ).listen();
+    colorFolder.add( settings, 'parOpacity', 0.0, 1.0 ).listen();
+
+    modelFolder.add(settings, 'currentModel', modelNames).name('Model')
+    .listen()
+    .onChange(function(value) {
+        const modelIndex = modelNames.indexOf(value);
+        updateParticleMesh(models[modelIndex]);
+    });
+    modelFolder.add(settings, 'currentScene', sceneNames).name('Scene')
+    .listen()
+    .onChange(function(value) {
+        loadGLBScene(value);
+    });
+    scaleFolder.add(settings, 'scaleFactor', 0, 20).name('Scale Factor')
+    .listen()
+    .onChange(function(value) {
+        updateScaleTexture();
+    });
+    scaleFolder.add(settings, 'varScaleFactor', 0, 1).name('Var Scale Factor')
+    .listen()
+    .onChange(function(value) {
+        updateScaleTexture();
+    });
+    scaleFolder.add( settings, 'wholeScale', 0.0, 0.1 ).listen();
+
+    glowFolder.add( settings, 'falloff', 0, 10).listen();
+    glowFolder.add( settings, 'glowInternalRadius', 0, 10).listen();
+    glowFolder.addColor( settings, 'glowColor' ).listen();
+    glowFolder.add( settings, 'glowSharpness', 0, 10).listen();
+    glowFolder.add( settings, 'opacity', 0, 1).listen();
+
+
+
+}
+
+function loadPreset(presetName) {
+    const preset = presets[presetName];
+    if (preset) {
+        if (presetName === 'scene1') {
+            playAnimation();
+            animationParams.frame = 0;
+        } else if (presetName === 'scene2') {
+            playAnimation();
+            animationParams.frame = 720;
+        } else if (presetName === 'scene3') {
+            playAnimation();
+            animationParams.frame = 1440;
+        } else if (presetName === 'scene4') {
+            playAnimation();
+            animationParams.frame = 2160;
+        }
+
+        Object.assign(settings, preset);
+        updateGUI();
+        updateTexture();
+        // loadGLBScene(settings.currentScene);
+        const modelIndex = modelNames.indexOf(settings.currentModel);
+        updateParticleMesh(models[modelIndex]);
+    }
+}
+
+function savePreset(presetName) {
+    presets[presetName] = { ...settings };
+}
+
+function updateGUI() {
+    gui.controllersRecursive().forEach(controller => controller.updateDisplay());
+}

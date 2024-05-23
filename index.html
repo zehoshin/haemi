@@ -16,20 +16,27 @@
 				width: 100dvw;
 				height: 100dvh;
 			}
+			video {
+				position: absolute;
+				z-index: 9999;
+				width: 50%;
+				left: 50%;
+				transform: translateX(-50%);
+			}
 		</style>
 	</head>
 	<body>
+		<!-- <video src="./src/0509Haemi.mp4" id="video"></video> -->
 		<script type="importmap">
 			{
 				"imports": {
 					"three": "./src/jsm/three.module.js",
-					"three/addons/": "./src/jsm/",
-					"postprocessing": "./src/jsm/postprocessing.js"
+					"three/addons/": "./src/jsm/"
 				}
+				
 			}
 		</script>
 		<script type="module" src="./src/script.js"></script>
-
 		<script id="quadVert" type="x-shader/x-vertex">
 			precision highp float;
 
@@ -227,6 +234,7 @@
 			uniform sampler2D texturePosition;
 			uniform sampler2D textureRotation;
 			uniform sampler2D textureScale;
+			uniform sampler2D textureAnimation;
 			uniform vec2 resolution;
 			uniform float time;
 			attribute float colorIndex;
@@ -280,7 +288,7 @@
 				float life = positionInfo.a;
 				float scale = baseScale * smoothstep(0.0, 0.5, life);
 
-				vec3 timeRotation = rotationAngles + time * vec3(0.1, 0.2, 0.3); // Adjust these values for different rotation speeds
+				vec3 timeRotation = rotationAngles + time * vec3(0.1, 0.2, 0.3);
 				mat3 rotationMat = rotationMatrix(timeRotation);
 				vec3 rotatedPosition = rotationMat * position * scale;
 		
@@ -300,6 +308,7 @@
 			uniform float roughness;
 			uniform float time;
 			uniform float glowIntensity;
+			uniform float opacity;
 			varying float vColorIndex;
 			varying vec3 vNormal;
 			varying vec3 vPosition;
@@ -332,12 +341,13 @@
 				vec3 glowColor = vec3(1.0, 1.0, 1.0) * glow;
 			
 				vec3 finalColor = ambient + diffuse + specular + glowColor;
-				gl_FragColor = vec4(finalColor, 1.0);
+				gl_FragColor = vec4(finalColor, opacity);
 			}
 		</script>
 
 		<script id="glowVertex" type="x-shader/x-vertex">
 			uniform sampler2D texturePosition;
+			uniform sampler2D textureScale;
 			uniform vec2 resolution;
 			varying vec3 vPosition;
 			varying vec3 vNormal;
@@ -345,8 +355,10 @@
 			void main() {
 				vec2 uv = vec2(gl_InstanceID % int(resolution.x), gl_InstanceID / int(resolution.x)) / resolution;
 				vec4 positionInfo = texture2D(texturePosition, uv);
+				vec4 scaleInfo = texture2D(textureScale, uv);
 		
-				vPosition = positionInfo.xyz;
+				vec3 scaledPosition = position * scaleInfo.r; 
+				vPosition = positionInfo.xyz + scaledPosition; 
 				vNormal = normal;
 		
 				gl_Position = projectionMatrix * modelViewMatrix * vec4(vPosition + position, 1.0);
