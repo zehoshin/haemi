@@ -328,6 +328,8 @@ function init() {
     controls = new OrbitControls( camera, renderer.domElement );
     controls.update();
 
+    initPrediction();
+    
     //GUI
     initGUI();
 
@@ -1167,7 +1169,7 @@ function onSelect() {
 
         reticle.matrix.decompose(position, quaternion, scale);
 
-        playAnimation();
+        // playAnimation();
 
         particleMesh.position.copy(position);
         particleMesh.rotation.copy(quaternion);
@@ -1190,6 +1192,49 @@ renderer.xr.addEventListener( 'sessionstart', function ( event ) {
 renderer.xr.addEventListener( 'sessionend', function ( event ) {
     console.log('offAR')
 } );
+
+const URL = "./my_model/";
+let model, webcam, maxPredictions, frameID, prediction;
+
+async function initPrediction() {
+	const modelURL = URL + "model.json";
+	const metadataURL = URL + "metadata.json";
+	model = await tmImage.load(modelURL, metadataURL);
+	maxPredictions = model.getTotalClasses();
+	webcam = new tmImage.Webcam(200, 200, false);
+
+	await webcam.setup({
+		facingMode: 'environment',
+	});
+	
+	await webcam.play();
+	window.requestAnimationFrame(loop);
+	document.getElementById("webcam-container").appendChild(webcam.canvas);
+}
+
+async function loop() {
+	if (webcam !== null && prediction[0].probability < 0.8) {
+		webcam.update();
+		await predict();
+		frameID = window.requestAnimationFrame(loop);
+	} else {
+        await webcam.stop();
+        window.cancelAnimationFrame(frameID);
+        webcam = null;
+        playAnimation();
+        console.log('Webcam stopped');
+	}
+}
+
+async function predict() {
+	prediction = await model.predict(webcam.canvas);
+	for (let i = 0; i < maxPredictions; i++) {
+		const classPrediction = prediction[i].className + ": " + prediction[i].probability.toFixed(2);
+		console.log(classPrediction)
+	}
+}
+
+
 
 function loadGLBScene(modelName) {
     const modelPaths = {
