@@ -247,9 +247,6 @@ function onDragStart(e) {
     document.body.style.cursor = 'grabbing';
     thumbnailVideo.style.display = 'block';
     thumbnailBack.style.display = 'block';
-    updateThumbnail();
-
-
 }
 
 function onDragMove(e) {
@@ -271,6 +268,7 @@ function onDragMove(e) {
         startX = currentX;
 
         checkAndLoadParticleMesh(animationParams.frame);
+        updateThumbnail();
     }
 }
 function onDragEnd() {
