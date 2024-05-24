@@ -1533,7 +1533,7 @@ function initGUI() {
     .onChange(function(value) {
         updateScaleTexture();
     });
-    scaleFolder.add( settings, 'wholeScale', 0.0, 0.2 ).listen();
+    scaleFolder.add( settings, 'wholeScale', 0.0, 10 ).listen();
 
     glowFolder.add( settings, 'falloff', 0, 10).listen();
     glowFolder.add( settings, 'glowInternalRadius', 0, 10).listen();
@@ -1595,7 +1595,7 @@ function initGUIforAR() {
     .onChange(function(value) {
         updateScaleTexture();
     });
-    scaleFolder.add( settings, 'wholeScale', 0.0, 0.2 ).listen();
+    scaleFolder.add( settings, 'wholeScale', 0.0, 10 ).listen();
 
     glowFolder.add( settings, 'opacity', 0, 1).listen();
 
