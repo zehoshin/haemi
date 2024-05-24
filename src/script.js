@@ -224,10 +224,10 @@ let TEXTURE_HEIGHT = settings.textureHeight;
 let AMOUNT = TEXTURE_WIDTH * TEXTURE_HEIGHT;
 
 const models = [];
-const modelNames = ['flower', 'Petal', 'butterfly'];
+const modelNames = ['Petal', 'flower', 'butterfly'];
 const modelPaths = [
-    './src/models/flower.glb', 
     './src/models/Petal.glb',
+    './src/models/flower.glb', 
     './src/models/butterfly.glb'
 ];
 
@@ -1359,6 +1359,7 @@ function checkAndLoadParticleMesh(frame) {
 
 function loadParticleMesh(modelName) {
     const modelIndex = modelNames.indexOf(modelName);
+    console.log(modelIndex)
     if (modelIndex !== -1) {
         updateParticleMesh(models[modelIndex]);
     }
