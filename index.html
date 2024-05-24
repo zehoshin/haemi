@@ -14,7 +14,7 @@
 					width: 75px;
 					height: 75px;
 					border-radius: 50%;
-					background-color: blue;
+					background-color: rgb(200, 200, 200);
 					bottom: 300px;
 					right: 30px;
 					z-index: 9999;
@@ -24,7 +24,7 @@
 					width: 75px;
 					height: 75px;
 					border-radius: 50%;
-					background-color: red;
+					background-color: rgb(100, 100, 100);
 					bottom: 200px;
 					right: 30px;
 					z-index: 9999;
@@ -42,13 +42,13 @@
 					justify-content: space-between;
 					align-items: center;
 
-					background-color: blue;
+					background-color: rgb(200, 200, 200);
 				}
 				.scene {
 					margin: 10px;
 					width: 100%;
 					height: 100%;
-					background-color: red;
+					background-color: rgb(100, 100, 100);
 				}
 			}
 			body {
@@ -69,18 +69,24 @@
 				left: 50%;
 				transform: translateX(-50%);
 			}
+			#log {
+				color: red;
+				font-size: 20px;
+				font-weight: 900;
+			}
 		</style>
 	</head>
 	<body>
 		<video src="./src/0509Haemi.mp4" id="video"></video>
-		<!-- <div id="hideUI"></div>
+		<div id="hideUI"></div>
 		<div id="fixParticlePos"></div>
 		<div id="skipScene">
 			<div id="scene1" class="scene"></div>
 			<div id="scene2" class="scene"></div>
 			<div id="scene3" class="scene"></div>
 			<div id="scene4" class="scene"></div>
-		</div> -->
+		</div>
+		<div id="log">123</div>
 
 		<script type="importmap">
 			{

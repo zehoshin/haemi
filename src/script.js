@@ -935,8 +935,6 @@ function frameAnimation() {
         animationParams.isPlaying = false;
     }
 
-    console.log(predictScene)
-
     if (window.innerWidth > 640) {
     checkAndLoadScene(animationParams.frame);
     }
