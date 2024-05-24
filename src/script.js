@@ -231,8 +231,8 @@ let currentAngle = 0;
 
 thumbnailVideo.src = './src/thumbnail_video.mp4';
 
-thumbnailVideo.style.display = 'none';
-thumbnailBack.style.display = 'none';
+// thumbnailVideo.style.display = 'none';
+// thumbnailBack.style.display = 'none';
 
 function updateThumbnail() {
     const frameIndex = Math.floor(animationParams.frame / 4);
