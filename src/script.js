@@ -9,6 +9,8 @@ let predictScene = '';
 let isSkipped = false;
 let fromScene1 = false;
 
+const overlay = document.createElement( 'div' );
+
 const settings = {
     //amount
     textureWidth: 32,
@@ -320,6 +322,10 @@ function init() {
     controls = new OrbitControls( camera, renderer.domElement );
     controls.update();
     window.addEventListener('resize', onWindowResize, false);
+
+    overlay.id = 'overlay';
+    overlay.style.display = 'none';
+    document.body.appendChild( overlay );
 
     //GUI
     initGUI();
@@ -960,10 +966,10 @@ function frameAnimation() {
         settings.circleHeight = 25;
 
         //color
-        settings.lightIntensity = 0.7;
-        settings.glowIntensity = 0.2;
-        settings.metalness = 0.3;
-        settings.roughness = 1.0;
+        // settings.lightIntensity = 0.7;
+        // settings.glowIntensity = 0.2;
+        // settings.metalness = 0.3;
+        // settings.roughness = 1.0;
         settings.color1 = '#cfd945';
         settings.color2 = '#448717';
         
@@ -975,7 +981,7 @@ function frameAnimation() {
             updateScaleTexture();
         }
         settings.varScaleFactor = 0.6;
-        settings.wholeScale = 0.006;
+        // settings.wholeScale = 0.006;
 
         //glow
         settings.falloff = 0.0;
@@ -1039,10 +1045,10 @@ function frameAnimation() {
         settings.circleHeight = 25;
 
         //color
-        settings.lightIntensity = 0.7;
-        settings.glowIntensity = 0.2;
-        settings.metalness = 0.3;
-        settings.roughness = 1.0;
+        // settings.lightIntensity = 0.7;
+        // settings.glowIntensity = 0.2;
+        // settings.metalness = 0.3;
+        // settings.roughness = 1.0;
         settings.color1 = '#f8c75d';
         settings.color2 = '#ebd6f5';
         
@@ -1054,7 +1060,7 @@ function frameAnimation() {
             updateScaleTexture();
         }
         settings.varScaleFactor = 0.6;
-        settings.wholeScale = 0.006;
+        // settings.wholeScale = 0.006;
 
         //glow
         settings.falloff = 0.0;
@@ -1112,10 +1118,10 @@ function frameAnimation() {
         settings.circleHeight = 25;
 
         //color
-        settings.lightIntensity = 1.0;
-        settings.glowIntensity = 0.2;
-        settings.metalness = 0.3;
-        settings.roughness = 1.0;
+        // settings.lightIntensity = 1.0;
+        // settings.glowIntensity = 0.2;
+        // settings.metalness = 0.3;
+        // settings.roughness = 1.0;
         settings.color1 = '#bb00ff';
         settings.color2 = '#f5d6eb';
         
@@ -1127,7 +1133,7 @@ function frameAnimation() {
             updateScaleTexture();
         }
         settings.varScaleFactor = 0.6;
-        settings.wholeScale = 0.006;
+        // settings.wholeScale = 0.006;
 
         //glow
         settings.falloff = 0.0;
@@ -1191,10 +1197,10 @@ function frameAnimation() {
         settings.circleHeight = 25;
 
         //color
-        settings.lightIntensity = 1.0;
-        settings.glowIntensity = 0.2;
-        settings.metalness = 0.3;
-        settings.roughness = 1.0;
+        // settings.lightIntensity = 1.0;
+        // settings.glowIntensity = 0.2;
+        // settings.metalness = 0.3;
+        // settings.roughness = 1.0;
         settings.color1 = '#fbff00';
         settings.color2 = '#f5d6eb';
         
@@ -1206,7 +1212,7 @@ function frameAnimation() {
             updateScaleTexture();
         }
         settings.varScaleFactor = 0.6;
-        settings.wholeScale = 0.006;
+        // settings.wholeScale = 0.006;
 
         //glow
         settings.falloff = 0.0;
@@ -1428,8 +1434,11 @@ function loadGLBScene(modelName) {
 }
 
 function initGUI() {
-    gui = new GUI();
-
+    if (window.innerWidth > 640) {
+        gui = new GUI();
+    } else {
+        gui = new GUI( { container: overlay } );
+    }
     const animationFolder = gui.addFolder( 'animation' );
     const skipFolder = gui.addFolder( 'skip' );
     // const presetFolder = gui.addFolder('Presets');
@@ -1525,7 +1534,7 @@ function initGUI() {
     .onChange(function(value) {
         updateScaleTexture();
     });
-    scaleFolder.add( settings, 'wholeScale', 0.0, 0.1 ).listen();
+    scaleFolder.add( settings, 'wholeScale', 0.0, 0.2 ).listen();
 
     glowFolder.add( settings, 'falloff', 0, 10).listen();
     glowFolder.add( settings, 'glowInternalRadius', 0, 10).listen();
@@ -1582,7 +1591,7 @@ function createButton( renderer, sessionInit = {} ) {
 
         if ( sessionInit.domOverlay === undefined ) {
 
-            const overlay = document.createElement( 'div' );
+            // const overlay = document.createElement( 'div' );
             overlay.id = 'overlay';
             overlay.style.display = 'none';
             document.body.appendChild( overlay );
