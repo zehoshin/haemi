@@ -231,8 +231,8 @@ let currentAngle = 0;
 
 thumbnailVideo.src = './src/thumbnail_video.mp4';
 
-// thumbnailVideo.style.display = 'none';
-// thumbnailBack.style.display = 'none';
+thumbnailVideo.style.display = 'none';
+thumbnailBack.style.display = 'none';
 
 function updateThumbnail() {
     const frameIndex = Math.floor(animationParams.frame / 4);
@@ -245,8 +245,8 @@ function onDragStart(e) {
     startX = e.type === 'mousedown' ? e.clientX : e.touches[0].clientX;
     startAngle = currentAngle;
     document.body.style.cursor = 'grabbing';
-    // thumbnailVideo.style.display = 'block';
-    // thumbnailBack.style.display = 'block';
+    thumbnailVideo.style.display = 'block';
+    thumbnailBack.style.display = 'block';
 }
 
 function onDragMove(e) {
@@ -274,8 +274,8 @@ function onDragMove(e) {
 function onDragEnd() {
     isDragging = false;
     document.body.style.cursor = 'default';
-    // thumbnailVideo.style.display = 'none';
-    // thumbnailBack.style.display = 'none';
+    thumbnailVideo.style.display = 'none';
+    thumbnailBack.style.display = 'none';
 }
 
 vinyl.addEventListener('mousedown', onDragStart);
@@ -1005,7 +1005,6 @@ function frameAnimation() {
 
         currentAngle = animationParams.frame * angleIncrementPerFrame;
         vinyl.style.transform = `translateX(-50%) rotate(${currentAngle}deg)`;
-        updateThumbnail();
     }
 
     if (animationParams.isPlaying && animationParams.frame === 2880) {
