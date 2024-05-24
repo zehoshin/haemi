@@ -297,7 +297,7 @@ function init() {
     //webXR
 
     controller = renderer.xr.getController( 0 );
-    controller.addEventListener( 'select', onSelect );
+    // controller.addEventListener( 'select', onSelect );
     scene.add( controller );
 
     reticle = new THREE.Mesh(
@@ -1591,23 +1591,16 @@ function createButton( renderer, sessionInit = {} ) {
             svg.style.right = '20px';
             svg.style.top = '20px';
             svg.addEventListener( 'click', function () {
-
                 currentSession.end();
-
             } );
 
             const fixParticlePos = document.createElement("div");
             fixParticlePos.id = "fixParticlePos";
 
-
-
-
-
+            fixParticlePos.addEventListener( 'click', onSelect );
 
             overlay.appendChild(fixParticlePos);
             overlay.appendChild( svg );
-
-
 
             const path = document.createElementNS( 'http://www.w3.org/2000/svg', 'path' );
             path.setAttribute( 'd', 'M 12,12 L 28,28 M 28,12 12,28' );
