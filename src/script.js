@@ -10,6 +10,8 @@ let isSkipped = false;
 let fromScene1 = false;
 
 const overlay = document.createElement( 'div' );
+const log = document.createElement('div');
+log.id = 'log';
 
 const settings = {
     //amount
@@ -1247,6 +1249,8 @@ function frameAnimation() {
 
 function logFPS() {
     console.log(`${frameCount} fps`);
+    log.innerHTML = `${frameCount} fps`;
+
     frameCount = 0; 
 }
 
@@ -1729,7 +1733,7 @@ function createButton( renderer, sessionInit = {} ) {
             overlay.appendChild(fixParticlePos);
             overlay.appendChild(skipScene);
             overlay.appendChild(hideUI);
-
+            overlay.appendChild(log)
             overlay.appendChild( svg );
 
             const path = document.createElementNS( 'http://www.w3.org/2000/svg', 'path' );
