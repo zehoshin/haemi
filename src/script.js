@@ -5,15 +5,19 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { ARButton } from 'three/addons/webxr/ARButton.js';
 import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js'
 
-let flag1 = false;
+let predictScene = '';
+let isSkipped = false;
+let fromScene1 = false;
+let fromScene3 = false;
+
 
 const settings = {
     //amount
-    textureWidth: 64,
-    textureHeight: 64, 
+    textureWidth: 32,
+    textureHeight: 32, 
 
     //simul
-    speed: 1.5,
+    speed: 0.5,
     dieSpeed: 0.001,
     radius: 1.5,
     curlSize: 0.015,
@@ -30,12 +34,12 @@ const settings = {
     color1: '#cfd945',
     color2: '#448717',
     parOpacity: 0.0,
-
+    
     //scale
     currentModel: 'Petal',
     currentScene: 'scene1',
-    scaleFactor: 0.0,
-    varScaleFactor: 0.0,
+    scaleFactor: 0.6,
+    varScaleFactor: 0.6,
     wholeScale: 0.006,
 
     //glow
@@ -43,7 +47,7 @@ const settings = {
     glowInternalRadius: 0.0,
     glowColor: '#66ff00',
     glowSharpness: 0.0,
-    opacity: 0.000,
+    opacity: 0.0,
 };
 
 const presets = {
@@ -266,7 +270,9 @@ function init() {
     //set Render Scene
 
     scene = new THREE.Scene();
-    // scene.background = new THREE.Color( 0x000000 );
+    if (window.innerWidth > 640) {
+        scene.background = new THREE.Color( 0x000000 );
+    }
 
     camera = new THREE.PerspectiveCamera( 90, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.position.set( -0.3326, 6.2612, 
@@ -327,9 +333,8 @@ function init() {
     window.addEventListener('keyup', onKeyUp);
     controls = new OrbitControls( camera, renderer.domElement );
     controls.update();
+    window.addEventListener('resize', onWindowResize, false);
 
-    initPrediction();
-    
     //GUI
     initGUI();
 
@@ -635,7 +640,7 @@ function initParticles() {
 
     particleMesh = createParticleMesh(glbModel);
     particleMesh.renderOrder = 2;
-    scene.add(particleMesh);
+    // scene.add(particleMesh);
 }
 
 function createParticleMesh(model) {
@@ -856,7 +861,9 @@ function initGlowMesh() {
     glowMesh = new THREE.InstancedMesh(sphereGeometry, sphereMaterial, AMOUNT);
     glowMesh.scale.set(settings.wholeScale, settings.wholeScale, settings.wholeScale)
     glowMesh.renderOrder = 1;
+    if (animationParams.isPlaying) {
     scene.add(glowMesh);
+    }
 }
 
 function animate() {
@@ -872,8 +879,11 @@ function render(timestamp, frame) {
     time = newTime;
 
     initAnimation = Math.min(initAnimation + dt * 0.00025, 1);
+    if (animationParams.isPlaying && animationParams.frame < maxFrame) {
+
     updateSimulator(dt);
     updateParticles(dt);
+    }
 
     if ( frame ) {
 
@@ -927,158 +937,324 @@ function frameAnimation() {
         frameCount += 1;
         lastTime = now - (deltaTime % interval);
     }
-    // checkAndLoadScene(animationParams.frame);
+
+    if (animationParams.isPlaying && animationParams.frame === 2880) {
+        animationParams.isPlaying = false;
+    }
+
+    if (window.innerWidth > 640) {
+    checkAndLoadScene(animationParams.frame);
+    }
     checkAndLoadParticleMesh(animationParams.frame);
 
-    if (animationParams.isPlaying) {
-        if (animationParams.frame < 720) {
-            if (animationParams.frame < 100) {
-                if (settings.parOpacity <= 1.0 ){
-                    settings.parOpacity += 0.01;  
-                }
-                if (settings.opacity < 0.005  ){
-                    settings.opacity += 0.0001;  
-                }
-            }
+    if (animationParams.frame < 720) {
 
-            if (settings.scaleFactor <= 0.6 ) {
-                settings.scaleFactor += 0.002; 
-                updateScaleTexture();
-            }
-
-            if (settings.circleRadius < 600 ) {
-                settings.circleRadius += 1; 
-            }
-            if (settings.speed > 0.75 ) {
-                settings.speed -= 0.002; 
-            }
-
-            if (animationParams.frame > 600) {
-                if (settings.parOpacity >= 0.0 ){
-                    settings.parOpacity -= 0.005; 
-                }
-                if (settings.opacity >= 0.0 ){
-                    settings.opacity -= 0.00001; 
-                }
-            }
+        //simul
+        if (settings.speed < 0.5) {
+            settings.speed += 0.002;
+        } else if (settings.speed > 0.5) {
+            settings.speed -= 0.002;
         }
-        if (animationParams.frame >= 720 && animationParams.frame < 1440) {
-            if(animationParams.frame === 720) {
-                settings.textureWidth= 32;
-                settings.textureHeight = 32;
-                settings.color1 = '#f8c75d';
-                settings.color2 = '#ebd6f5';
-                settings.glowColor = '#ff7b00';
-                settings.dieSpeed = 0;
-                updateTexture();
-            }
-            if (settings.speed >= 0.3 ) {
-                settings.speed -= 0.001; 
-            }
-
-            if (settings.radius <= 10.0 ) {
-                settings.radius += 0.02; 
-            }
-            if (settings.circleRadius <= 1000 ) {
-                settings.circleRadius += 1; 
-            }
-            if (settings.opacity <= 0.012 ) {
-                settings.opacity += 0.0001; 
-            }
-
-
-            if (animationParams.frame < 1320) {
-                if (settings.parOpacity <= 1.0){
-                    settings.parOpacity += 0.002;
-                }
-                if (settings.opacity < 0.012 ){
-                    settings.opacity += 0.0001; 
-                }
-            }
-            if (animationParams.frame >= 1320) {
-                if (settings.parOpacity >= 0.0 ){
-                    settings.parOpacity -= 0.005; 
-                }
-                if (settings.opacity >= 0.0 ){
-                    settings.opacity -= 0.0001; 
-                }
-            }
+        settings.dieSpeed = 0.001;
+        if (settings.radius < 1.5) {
+            settings.radius += 0.01;
+        } else if (settings.radius > 1.5) {
+            settings.radius -= 0.01;
         }
+        settings.curlSize = 0.015;
+        settings.attraction = -2.0;
+        settings.tornadoStrength = 2.0;
+        if (settings.circleRadius < 600) {
+            settings.circleRadius += 1;
+        } else if (settings.circleRadius > 600) {
+            settings.circleRadius -= 1;
+        }
+        settings.circleHeight = 25;
+
+        //color
+        settings.lightIntensity = 0.7;
+        settings.glowIntensity = 0.2;
+        settings.metalness = 0.3;
+        settings.roughness = 1.0;
+        settings.color1 = '#cfd945';
+        settings.color2 = '#448717';
         
-        if (animationParams.frame >= 1440 && animationParams.frame < 2160) {
-            if(animationParams.frame === 1440) {
-                checkAndLoadParticleMesh(animationParams.frame);
-                settings.color1 = '#bb00ff';
-                settings.color2 = '#f5d6eb';
-                settings.varScaleFactor = 0.6;
-                settings.glowColor = '#d400ff';
-                settings.dieSpeed = 0.001; 
-                settings.radius = 1.5;
-                settings.speed = 0.8;
-                settings.tornadoStrength = 3.0;
-                settings.circleRadius = 550;
-                settings.circleHeight = 10;
-                settings.lightIntensity = 1.0;
-                settings.scaleFactor = 2.0;
-                updateScaleTexture();
-            }
+        //scale
+        settings.currentModel = 'Petal';
+        settings.currentScene = 'scene1';
+        if(settings.scaleFactor != 0.6) {
+            settings.scaleFactor = 0.6;
+            updateScaleTexture();
+        }
+        settings.varScaleFactor = 0.6;
+        settings.wholeScale = 0.006;
 
-            if (animationParams.frame < 2040) {
-                if (settings.parOpacity <= 1.0){
-                    settings.parOpacity += 0.005;
-                }
-                if (settings.opacity < 0.06 ){
-                    settings.opacity += 0.00005; 
-                }
+        //glow
+        settings.falloff = 0.0;
+        settings.glowInternalRadius = 0.0;
+        settings.glowColor = '#66ff00';
+        settings.glowSharpness = 0.0;
+
+        if (predictScene != 'scene1' || isSkipped) {
+            isSkipped = false;
+            if (settings.opacity <= 0.005) {
+                settings.opacity += 0.0001;
+            } else if (settings.opacity >= 0.005) {
+                settings.opacity -= 0.0001;
             }
-            if (animationParams.frame >= 2040) {
-                if (settings.parOpacity >= 0.0 ){
-                    settings.parOpacity -= 0.005; 
-                }
-                if (settings.opacity >= 0.0 ){
-                    settings.opacity -= 0.0001; 
-                }
+            if (settings.parOpacity <= 1.0) {
+                settings.parOpacity += 0.002;
+            }
+            if (settings.opacity >= 0.005 && settings.opacity <= 0.0051 && settings.parOpacity >= 1.0) {
+                isSkipped = false;
+                predictScene = 'scene1';
             }
         }
 
-        if (animationParams.frame >= 2160) {
-            if(animationParams.frame === 2160) {
-                settings.currentModel = 'butterfly';
-                checkAndLoadParticleMesh(animationParams.frame);
-                settings.color1 = '#fbff00';
-                settings.color2 = '#f5d6eb';
-                settings.varScaleFactor = 1.0;
-                settings.glowColor = '#ffa200';
-                settings.dieSpeed = 0.004; 
-                settings.radius = 0.75;
-                settings.speed = 0.75;
-                settings.attraction = -3.0;
-                settings.tornadoStrength = 3.3;
-                settings.circleRadius = 600;
-                settings.circleHeight = 25;
-                settings.lightIntensity = 1.0;
-                settings.scaleFactor = 0.3;
-                updateScaleTexture();
+        if (animationParams.frame > 600 ) {
+            if (settings.parOpacity >= 0.0) {
+                settings.parOpacity -= 0.005;
             }
+            if (settings.opacity >= 0.0) {
+                settings.opacity -= 0.0001;
+            }
+            
+        }
+        if (animationParams.frame === 700) {
+            fromScene1 = true;
+        }
+    }
+    if (animationParams.frame >= 720 && animationParams.frame < 1440) {
 
-            if (animationParams.frame < 2760) {
-                if (settings.parOpacity <= 1.0){
-                    settings.parOpacity += 0.005;
-                }
-                if (settings.opacity < 0.06 ){
-                    settings.opacity += 0.00005; 
-                }
+        //simul
+        if (settings.speed < 0.05) {
+            settings.speed += 0.002;
+        } else if (settings.speed > 0.05) {
+            settings.speed -= 0.002;
+        }
+        settings.dieSpeed = 0.001;
+        if (settings.radius < 10.0) {
+            settings.radius += 0.01;
+        }
+        settings.curlSize = 0.015;
+        settings.attraction = -2.0;
+        settings.tornadoStrength = 3.0;
+        if(fromScene1 && animationParams.frame === 720) {
+            settings.circleRadius = 1000;
+            fromScene1 = false;
+        }
+        if (settings.circleRadius < 800) {
+            settings.circleRadius += 1;
+        } else if (settings.circleRadius > 800) {
+            settings.circleRadius -= 0.1;
+        }
+        settings.circleHeight = 25;
+
+        //color
+        settings.lightIntensity = 0.7;
+        settings.glowIntensity = 0.2;
+        settings.metalness = 0.3;
+        settings.roughness = 1.0;
+        settings.color1 = '#f8c75d';
+        settings.color2 = '#ebd6f5';
+        
+        //scale
+        settings.currentModel = 'Petal';
+        settings.currentScene = 'scene2';
+        if(settings.scaleFactor != 0.3) {
+            settings.scaleFactor = 0.3;
+            updateScaleTexture();
+        }
+        settings.varScaleFactor = 0.6;
+        settings.wholeScale = 0.006;
+
+        //glow
+        settings.falloff = 0.0;
+        settings.glowInternalRadius = 0.0;
+        settings.glowColor = '#ff7b00';
+        settings.glowSharpness = 0.0;
+
+        if (predictScene != 'scene2' || isSkipped) {
+            isSkipped = false;
+            if (settings.opacity <= 0.012) {
+                settings.opacity += 0.0001;
+            } else if (settings.opacity >= 0.012) {
+                settings.opacity -= 0.0001;
             }
-            if (animationParams.frame >= 2760) {
-                if (settings.parOpacity >= 0.0 ){
-                    settings.parOpacity -= 0.007; 
-                }
-                if (settings.opacity >= -0.9999 ){
-                    settings.opacity -= 0.0002; 
-                }
+            if (settings.parOpacity <= 1.0) {
+                settings.parOpacity += 0.002;
+            } 
+            if (settings.opacity >= 0.012 && settings.opacity <= 0.0013 && settings.parOpacity >= 1.0) {
+                isSkipped = false;
+                predictScene = 'scene2';
             }
         }
 
+        if (animationParams.frame > 1320 ) {
+            if (settings.parOpacity >= 0.0) {
+                settings.parOpacity -= 0.005;
+            }
+            if (settings.opacity >= 0.0) {
+                settings.opacity -= 0.0001;
+            }
+        }
+    }
+    if (animationParams.frame >= 1440 && animationParams.frame < 2160) {
+
+        //simul
+        if (settings.speed < 0.8) {
+            settings.speed += 0.002;
+        } else if (settings.speed > 0.8) {
+            settings.speed -= 0.002;
+        }
+        settings.dieSpeed = 0.001;
+        if (settings.radius < 1.5) {
+            settings.radius += 0.02;
+        } else if (settings.radius > 1.5) {
+            settings.radius -= 0.02;
+        }
+        settings.curlSize = 0.015;
+        settings.attraction = -2.0;
+        settings.tornadoStrength = 3.0;
+        if (settings.circleRadius < 550) {
+            settings.circleRadius += 1;
+        } else if (settings.circleRadius > 550) {
+            settings.circleRadius -= 1;
+        }
+        settings.circleHeight = 25;
+
+        //color
+        settings.lightIntensity = 1.0;
+        settings.glowIntensity = 0.2;
+        settings.metalness = 0.3;
+        settings.roughness = 1.0;
+        settings.color1 = '#bb00ff';
+        settings.color2 = '#f5d6eb';
+        
+        //scale
+        settings.currentModel = 'flower';
+        settings.currentScene = 'scene3';
+        if(settings.scaleFactor != 2.0) {
+            settings.scaleFactor = 2.0;
+            updateScaleTexture();
+        }
+        settings.varScaleFactor = 0.6;
+        settings.wholeScale = 0.006;
+
+        //glow
+        settings.falloff = 0.0;
+        settings.glowInternalRadius = 0.0;
+        settings.glowColor = '#d400ff';
+        settings.glowSharpness = 0.0;
+
+        if (predictScene != 'scene3' || isSkipped) {
+            isSkipped = false;
+            if (settings.opacity <= 0.06) {
+                settings.opacity += 0.0001;
+            } else if (settings.opacity >= 0.06) {
+                settings.opacity -= 0.0001;
+            }
+            if (settings.parOpacity <= 1.0) {
+                settings.parOpacity += 0.002;
+            }
+            if (settings.opacity >= 0.06 && settings.opacity <= 0.061 && settings.parOpacity >= 1.0) {
+                isSkipped = false;
+                predictScene = 'scene3';
+            }
+        }
+
+        if (animationParams.frame > 2040 ) {
+            if (settings.parOpacity > 0.0) {
+                settings.parOpacity -= 0.005;
+            }
+            if (settings.opacity >= 0.0) {
+                settings.opacity -= 0.0001;
+            }
+        }
+        if (animationParams.frame === 2140) {
+            fromScene3 = true;
+        }
+    }
+
+    if (animationParams.frame >= 2160) {
+
+        //simul
+        if (settings.speed < 0.75) {
+            settings.speed += 0.002;
+        } else if (settings.speed > 0.75) {
+            settings.speed -= 0.002;
+        }
+        if (fromScene3 && animationParams.frame === 2160) {
+            fromScene3 = false;
+            settings.dieSpeed = 0.05;
+        }
+        if (settings.dieSpeed >= 0.004) {
+            settings.dieSpeed -= 0.0002
+        } else if (settings.dieSpeed <= 0.004) {
+            settings.dieSpeed += 0.0002
+        }
+        if (settings.radius < 0.75) {
+            settings.radius += 0.02;
+        } else if (settings.radius > 0.75) {
+            settings.radius -= 0.02;
+        }
+        settings.curlSize = 0.015;
+        settings.attraction = -3.0;
+        settings.tornadoStrength = 3.3;
+        if (settings.circleRadius < 600) {
+            settings.circleRadius += 1;
+        } else if (settings.circleRadius > 600) {
+            settings.circleRadius -= 1;
+        }
+        settings.circleHeight = 25;
+
+        //color
+        settings.lightIntensity = 1.0;
+        settings.glowIntensity = 0.2;
+        settings.metalness = 0.3;
+        settings.roughness = 1.0;
+        settings.color1 = '#fbff00';
+        settings.color2 = '#f5d6eb';
+        
+        //scale
+        settings.currentModel = 'butterfly';
+        settings.currentScene = 'scene4';
+        if(settings.scaleFactor != 0.3) {
+            settings.scaleFactor = 0.3;
+            updateScaleTexture();
+        }
+        settings.varScaleFactor = 0.6;
+        settings.wholeScale = 0.006;
+
+        //glow
+        settings.falloff = 0.0;
+        settings.glowInternalRadius = 0.0;
+        settings.glowColor = '#ffa200';
+        settings.glowSharpness = 0.0;
+
+        if (predictScene != 'scene4' || isSkipped) {
+            if (settings.opacity <= 0.06) {
+                settings.opacity += 0.0001;
+            } else if (settings.opacity >= 0.06) {
+                settings.opacity -= 0.0001;
+            }
+            if (settings.parOpacity <= 1.0) {
+                settings.parOpacity += 0.002;
+            }
+            if (settings.opacity >= 0.06 && settings.opacity <= 0.061 && settings.parOpacity >= 1.0) {
+                isSkipped = false;
+                predictScene = 'scene4';
+            }
+        }
+
+        if (animationParams.frame > 2760 ) {
+            if (settings.parOpacity > 0.0) {
+                settings.parOpacity -= 0.005;
+            }
+            if (settings.opacity >= 0.0) {
+                settings.opacity -= 0.001;
+            }
+        }
     }
 }
 
@@ -1091,19 +1267,57 @@ function playAnimation() {
     if (!animationParams.isPlaying) {
         animationParams.isPlaying = true;
         lastTime = performance.now();
+        scene.add(particleMesh);
+        // scene.add(glowMesh);
         frameAnimation();
-        // video.play();
+
+        if (window.innerWidth > 640) {
+        video.play();
+        }
     }
 }
 
 function stopAnimation() {
     animationParams.isPlaying = false;
+    if (window.innerWidth > 640) {
+        video.pause();
+    }
+    isSkipped = true;
+    // settings.speed = 0;
+    // settings.dieSpeed = 0;
+    // settings.tornadoStrength = 0;
 }
 
 function resetAnimation() {
     animationParams.isPlaying = false;
     animationParams.frame = 0;
     currentSceneLoaded = '';
+    if (window.innerWidth > 640) {
+        video.currentTime = 0 / fps;
+        video.pause();
+    }
+    if (particleMesh && glowMesh) {
+        scene.remove(particleMesh);
+        scene.remove(glowMesh);
+    }
+
+}
+
+function skipToFrame(frame) {
+    isSkipped = true;
+    animationParams.frame = frame;
+
+    if (window.innerWidth > 640) {
+    checkAndLoadScene(frame);
+    }
+
+    checkAndLoadParticleMesh(frame);
+    playAnimation();
+
+    if (window.innerWidth > 640) {
+        video.currentTime = frame / fps;
+        video.play();
+    }
 }
 
 function checkAndLoadScene(frame) {
@@ -1157,6 +1371,13 @@ function onKeyUp(evt) {
     }
 }
 
+function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+
 function onSelect() {
     if (reticle.visible) {
         if (!particleMesh) {
@@ -1169,7 +1390,7 @@ function onSelect() {
 
         reticle.matrix.decompose(position, quaternion, scale);
 
-        // playAnimation();
+        playAnimation();
 
         particleMesh.position.copy(position);
         particleMesh.rotation.copy(quaternion);
@@ -1192,52 +1413,6 @@ renderer.xr.addEventListener( 'sessionstart', function ( event ) {
 renderer.xr.addEventListener( 'sessionend', function ( event ) {
     console.log('offAR')
 } );
-
-let model, webcam, maxPredictions, frameID, prediction;
-
-async function initPrediction() {
-	const modelURL = "./src/my_model/model.json";
-	const metadataURL = "./src/my_model/metadata.json";
-	model = await tmImage.load(modelURL, metadataURL);
-	maxPredictions = model.getTotalClasses();
-	webcam = new tmImage.Webcam(200, 200, false);
-
-	await webcam.setup({
-		facingMode: 'environment',
-	});
-	
-	await webcam.play();
-	window.requestAnimationFrame(loop);
-	document.getElementById("webcam-container").appendChild(webcam.canvas);
-}
-
-async function loop() {
-	if (webcam !== null) {
-		webcam.update();
-		await predict();
-		frameID = window.requestAnimationFrame(loop);
-        if (prediction[0].probability < 0.8){
-            await webcam.stop();
-            window.cancelAnimationFrame(frameID);
-            webcam = null;
-            playAnimation();
-            console.log('Webcam stopped');
-        }
-	} else {
-        console.log('Webcam stopped');
-	}
-}
-
-
-async function predict() {
-	prediction = await model.predict(webcam.canvas);
-	for (let i = 0; i < maxPredictions; i++) {
-		const classPrediction = prediction[i].className + ": " + prediction[i].probability.toFixed(2);
-		console.log(classPrediction)
-	}
-}
-
-
 
 function loadGLBScene(modelName) {
     const modelPaths = {
@@ -1266,6 +1441,7 @@ function initGUI() {
     gui = new GUI();
 
     const animationFolder = gui.addFolder( 'animation' );
+    const skipFolder = gui.addFolder( 'skip' );
     // const presetFolder = gui.addFolder('Presets');
     // const saveFolder = gui.addFolder('Save Presets');
     const amountFolder = gui.addFolder( 'amount' );
@@ -1275,10 +1451,27 @@ function initGUI() {
     const scaleFolder = gui.addFolder( 'scale' );
     const glowFolder = gui.addFolder( 'glow' );
 
-    animationFolder.add( animationParams, 'frame', 1, 2880, 1 ).listen();
+    animationFolder.add( animationParams, 'frame', 1, 2880, 1 )
+    .listen()
+    .onChange( function() {
+        updateScaleTexture();
+
+        if (window.innerWidth > 640) {
+        checkAndLoadScene(animationParams.frame);
+        }
+
+        checkAndLoadParticleMesh(animationParams.frame);
+        console.log(settings.scaleFactor)
+    });
     animationFolder.add({ play: playAnimation }, 'play').name('Play');
     animationFolder.add({ stop: stopAnimation }, 'stop').name('Stop');
-    animationFolder.add({ reset: resetAnimation }, 'reset').name('Reset')    
+    animationFolder.add({ reset: resetAnimation }, 'reset').name('Reset');
+    
+    skipFolder.add({ skipToScene1: () => skipToFrame(0) }, 'skipToScene1').name('Skip to Scene 1');
+    skipFolder.add({ skipToScene2: () => skipToFrame(720) }, 'skipToScene2').name('Skip to Scene 2');
+    skipFolder.add({ skipToScene3: () => skipToFrame(1440) }, 'skipToScene3').name('Skip to Scene 3');
+    skipFolder.add({ skipToScene4: () => skipToFrame(2160) }, 'skipToScene4').name('Skip to Scene 4');
+
 
     // presetFolder.add({ preset1: () => loadPreset('scene1') }, 'preset1').name('Load scene1');
     // presetFolder.add({ preset2: () => loadPreset('scene2') }, 'preset2').name('Load scene2');
@@ -1324,11 +1517,14 @@ function initGUI() {
         const modelIndex = modelNames.indexOf(value);
         updateParticleMesh(models[modelIndex]);
     });
+
+    if (window.innerWidth > 640) {
     modelFolder.add(settings, 'currentScene', sceneNames).name('Scene')
     .listen()
     .onChange(function(value) {
         loadGLBScene(value);
     });
+    }
     scaleFolder.add(settings, 'scaleFactor', 0, 20).name('Scale Factor')
     .listen()
     .onChange(function(value) {

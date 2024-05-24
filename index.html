@@ -5,6 +5,11 @@
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 		<style>
+			@media all and ( max-width: 640px ) {
+				video { 
+					display: none;
+				}
+			}
 			body {
 				margin: 0;
 				overflow: hidden;
@@ -26,8 +31,7 @@
 		</style>
 	</head>
 	<body>
-		<!-- <video src="./src/0509Haemi.mp4" id="video"></video> -->
-		<div id="webcam-container"></div>
+		<video src="./src/0509Haemi.mp4" id="video"></video>
 		<script type="importmap">
 			{
 				"imports": {
@@ -37,8 +41,6 @@
 				
 			}
 		</script>
-		<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
-		<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
 		<script type="module" src="./src/script.js"></script>
 		<script id="quadVert" type="x-shader/x-vertex">
 			precision highp float;
