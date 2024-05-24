@@ -296,9 +296,9 @@ function init() {
     
     //webXR
 
-    controller = renderer.xr.getController( 0 );
+    // controller = renderer.xr.getController( 0 );
     // controller.addEventListener( 'select', onSelect );
-    scene.add( controller );
+    // scene.add( controller );
 
     reticle = new THREE.Mesh(
         new THREE.RingGeometry( 0.15, 0.2, 32 ).rotateX( - Math.PI / 2 ),
@@ -1597,7 +1597,10 @@ function createButton( renderer, sessionInit = {} ) {
             const fixParticlePos = document.createElement("div");
             fixParticlePos.id = "fixParticlePos";
 
-            fixParticlePos.addEventListener( 'click', onSelect );
+            fixParticlePos.addEventListener( 'click', function () {
+                onSelect();
+                fixParticlePos.style.backgroundColor = 'blue';
+            } );
 
             overlay.appendChild(fixParticlePos);
             overlay.appendChild( svg );
