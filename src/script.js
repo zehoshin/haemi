@@ -343,7 +343,7 @@ function initSimulator() {
 
     simulScene = new THREE.Scene();
     simulCamera = new THREE.Camera();
-    simulCamera.position.z = 1;
+    // simulCamera.position.z = 1;
 
     copyShader = new THREE.RawShaderMaterial({
         uniforms: {
@@ -1571,6 +1571,8 @@ function updateGUI() {
     gui.controllersRecursive().forEach(controller => controller.updateDisplay());
 }
 
+let isUIdisplayed = true;
+
 function createButton( renderer, sessionInit = {} ) {
 
     const button = document.createElement( 'button' );
@@ -1599,10 +1601,52 @@ function createButton( renderer, sessionInit = {} ) {
 
             fixParticlePos.addEventListener( 'click', function () {
                 onSelect();
-                fixParticlePos.style.backgroundColor = 'blue';
             } );
 
+            const skipScene = document.createElement("div");
+            skipScene.id = "skipScene";
+            
+            const scene1 = document.createElement('div');
+            const scene2 = document.createElement('div');
+            const scene3 = document.createElement('div');
+            const scene4 = document.createElement('div');
+            scene1.id = 'scene1';
+            scene1.className = 'scene';
+            scene2.id = 'scene1';
+            scene2.className = 'scene';
+            scene3.id = 'scene1';
+            scene3.className = 'scene';
+            scene4.id = 'scene1';
+            scene4.className = 'scene';
+
+            const hideUI = document.createElement("div");
+            hideUI.id = "hideUI";
+
+            hideUI.addEventListener( 'click', function () {
+                if (isUIdisplayed) {
+                    fixParticlePos.style.display = 'none';
+                    skipScene.style.display = 'none';
+                    isUIdisplayed = false;
+                } else {
+                    fixParticlePos.style.display = 'block';
+                    skipScene.style.display = 'flex';
+                    isUIdisplayed = true;
+                }
+            } );
+
+            scene1.addEventListener( 'click', skipToFrame(0) );
+            scene2.addEventListener( 'click', skipToFrame(720) );
+            scene3.addEventListener( 'click', skipToFrame(1440) );
+            scene4.addEventListener( 'click', skipToFrame(2160) );
+
+
+            skipScene.appendChild(scene1);
+            skipScene.appendChild(scene2);
+            skipScene.appendChild(scene3);
+            skipScene.appendChild(scene4);
+
             overlay.appendChild(fixParticlePos);
+            overlay.appendChild(skipScene);
             overlay.appendChild( svg );
 
             const path = document.createElementNS( 'http://www.w3.org/2000/svg', 'path' );
