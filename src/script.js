@@ -329,6 +329,7 @@ function init() {
 
     //GUI
     initGUI();
+    initGUIforAR();
 
     //init Simulator & Particles & Glow
     initSimulator();
@@ -1434,12 +1435,10 @@ function loadGLBScene(modelName) {
 }
 
 function initGUI() {
-    if (window.innerWidth > 640) {
-        gui = new GUI();
-    } else {
-        gui = new GUI( { container: overlay } );
-    }
+    gui = new GUI( { container: overlay } );
+
     const animationFolder = gui.addFolder( 'animation' );
+
     const skipFolder = gui.addFolder( 'skip' );
     // const presetFolder = gui.addFolder('Presets');
     // const saveFolder = gui.addFolder('Save Presets');
@@ -1542,6 +1541,63 @@ function initGUI() {
     glowFolder.add( settings, 'glowSharpness', 0, 10).listen();
     glowFolder.add( settings, 'opacity', 0, 1).listen();
 
+
+    gui.close();
+}
+
+function initGUIforAR() {
+    gui = new GUI( { container: overlay } );
+
+    const animationFolder = gui.addFolder( 'animation' );
+    const modelFolder = gui.addFolder( 'model' );
+    const colorFolder = gui.addFolder( 'color' );
+    const scaleFolder = gui.addFolder( 'scale' );
+    const glowFolder = gui.addFolder( 'glow' );
+
+    animationFolder.add( animationParams, 'frame', 1, 2880, 1 )
+    .listen()
+    .onChange( function() {
+        updateScaleTexture();
+
+        if (window.innerWidth > 640) {
+        checkAndLoadScene(animationParams.frame);
+        }
+
+        checkAndLoadParticleMesh(animationParams.frame);
+        console.log(settings.scaleFactor)
+    });
+    animationFolder.add({ play: playAnimation }, 'play').name('Play');
+    animationFolder.add({ stop: stopAnimation }, 'stop').name('Stop');
+    animationFolder.add({ reset: resetAnimation }, 'reset').name('Reset');
+    
+    colorFolder.add( settings, 'lightIntensity', 0.0, 5.0 ).listen();
+    colorFolder.add( settings, 'glowIntensity', 0.0, 1.0 ).listen();
+    colorFolder.add( settings, 'metalness', 0.0, 1.0 ).listen();
+    colorFolder.add( settings, 'roughness', 0.0, 1.0 ).listen();
+    colorFolder.addColor( settings, 'color1' ).listen();
+    colorFolder.addColor( settings, 'color2' ).listen();
+    colorFolder.add( settings, 'parOpacity', 0.0, 1.0 ).listen();
+
+    modelFolder.add(settings, 'currentModel', modelNames).name('Model')
+    .listen()
+    .onChange(function(value) {
+        const modelIndex = modelNames.indexOf(value);
+        updateParticleMesh(models[modelIndex]);
+    });
+
+    scaleFolder.add(settings, 'scaleFactor', 0, 20).name('Scale Factor')
+    .listen()
+    .onChange(function(value) {
+        updateScaleTexture();
+    });
+    scaleFolder.add(settings, 'varScaleFactor', 0, 1).name('Var Scale Factor')
+    .listen()
+    .onChange(function(value) {
+        updateScaleTexture();
+    });
+    scaleFolder.add( settings, 'wholeScale', 0.0, 0.2 ).listen();
+
+    glowFolder.add( settings, 'opacity', 0, 1).listen();
 
     gui.close();
 }
