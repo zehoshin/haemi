@@ -1435,7 +1435,7 @@ function loadGLBScene(modelName) {
 }
 
 function initGUI() {
-    gui = new GUI( { container: overlay } );
+    gui = new GUI();
 
     const animationFolder = gui.addFolder( 'animation' );
 
