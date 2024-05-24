@@ -1572,6 +1572,7 @@ function updateGUI() {
 }
 
 let isUIdisplayed = true;
+let isPosfixed = false;
 
 function createButton( renderer, sessionInit = {} ) {
 
@@ -1600,6 +1601,7 @@ function createButton( renderer, sessionInit = {} ) {
             fixParticlePos.id = "fixParticlePos";
 
             fixParticlePos.addEventListener( 'click', function () {
+                isPosfixed = true;
                 onSelect();
             } );
 
@@ -1635,16 +1637,24 @@ function createButton( renderer, sessionInit = {} ) {
             } );
 
             scene1.addEventListener( 'click', function () {
-                skipToFrame(0);
+                if (isPosfixed) {
+                    skipToFrame(0);
+                }
             } );
             scene2.addEventListener( 'click', function () {
-                skipToFrame(720);
+                if (isPosfixed) {
+                    skipToFrame(720);
+                }
             } );
             scene3.addEventListener( 'click', function () {
-                skipToFrame(1440);
+                if (isPosfixed) {
+                    skipToFrame(1440);
+                }
             } );
             scene4.addEventListener( 'click', function () {
-                skipToFrame(2160);
+                if (isPosfixed) {
+                    skipToFrame(2160);
+                }
             } );
 
 
@@ -1655,6 +1665,8 @@ function createButton( renderer, sessionInit = {} ) {
 
             overlay.appendChild(fixParticlePos);
             overlay.appendChild(skipScene);
+            overlay.appendChild(hideUI);
+
             overlay.appendChild( svg );
 
             const path = document.createElementNS( 'http://www.w3.org/2000/svg', 'path' );
