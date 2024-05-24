@@ -222,7 +222,7 @@ vinyl.id = 'vinyl';
 let thumbnailVideo = document.createElement('video');
 thumbnailVideo.id = 'thumbnail';
 let thumbnailBack = document.createElement('div');
-thumbnailBack.id = 'thumbnailack';
+thumbnailBack.id = 'thumbnail_back';
 
 let isDragging = false;
 let startAngle = 0;
@@ -242,6 +242,7 @@ function onDragStart(e) {
     startX = e.type === 'mousedown' ? e.clientX : e.touches[0].clientX;
     startAngle = currentAngle;
     document.body.style.cursor = 'grabbing';
+    updateThumbnail();
 }
 
 function onDragMove(e) {
@@ -1734,6 +1735,7 @@ function createButton( renderer, sessionInit = {} ) {
 
             const fixParticlePos = document.createElement("div");
             fixParticlePos.id = "fixParticlePos";
+            fixParticlePos.innerHTML = '생성';
 
             fixParticlePos.addEventListener( 'click', function () {
                 isPosfixed = true;
@@ -1758,6 +1760,7 @@ function createButton( renderer, sessionInit = {} ) {
 
             const hideUI = document.createElement("div");
             hideUI.id = "hideUI";
+            hideUI.innerHTML = "UIoff";
 
             hideUI.addEventListener( 'click', function () {
                 if (isUIdisplayed) {
@@ -1766,6 +1769,7 @@ function createButton( renderer, sessionInit = {} ) {
                     vinyl.style.display = 'none';
                     thumbnailVideo.style.display = 'none';
                     thumbnailBack.style.display = 'none';
+                    hideUI.innerHTML = "UIon";
                     isUIdisplayed = false;
                 } else {
                     fixParticlePos.style.display = 'block';
@@ -1773,6 +1777,7 @@ function createButton( renderer, sessionInit = {} ) {
                     vinyl.style.display = 'block';
                     thumbnailVideo.style.display = 'block';
                     thumbnailBack.style.display = 'block';
+                    hideUI.innerHTML = "UIoff";
                     isUIdisplayed = true;
                 }
             } );
