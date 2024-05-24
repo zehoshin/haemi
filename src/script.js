@@ -219,7 +219,7 @@ let currentParticleMesh = '';
 
 let vinyl = document.createElement('div');
 vinyl.id = 'vinyl';
-let thumbnailVideo = document.createElement('video');
+let thumbnailVideo = document.createElement('div');
 thumbnailVideo.id = 'thumbnail';
 let thumbnailBack = document.createElement('div');
 thumbnailBack.id = 'thumbnail_back';
@@ -229,16 +229,17 @@ let startAngle = 0;
 let startX = 0;
 let currentAngle = 0;
 
-thumbnailVideo.src = './src/thumbnail_video.mp4';
+// thumbnailVideo.src = './src/thumbnail_video.mp4';
 
 thumbnailVideo.style.display = 'none';
 thumbnailBack.style.display = 'none';
 
 function updateThumbnail() {
     const frameIndex = Math.floor(animationParams.frame / 4);
-    const videoTime = frameIndex / 6;
-    thumbnailVideo.currentTime = videoTime;
+    const imageUrl = `./src/haemiImg/haemi${String(frameIndex).padStart(3, '0')}.jpg`;
+    thumbnail.style.backgroundImage = `url(${imageUrl})`;
 }
+
 
 function onDragStart(e) {
     isDragging = true;
@@ -344,7 +345,7 @@ function init() {
     scene.background = new THREE.Color( 0x000000 );
     }
 
-    camera = new THREE.PerspectiveCamera( 90, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera = new THREE.PerspectiveCamera( 90, window.innerWidth / window.innerHeight, 0.1, 10000);
     camera.position.set( -0.3326, 6.2612, 
         8.2365 );
     camera.rotation.set( 
@@ -940,7 +941,6 @@ function animate() {
   
 function render(timestamp, frame) {
     controls.update();
-    updateThumbnail();
 
     let newTime = Date.now();
     dt = newTime - time;
