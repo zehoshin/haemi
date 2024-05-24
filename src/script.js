@@ -268,7 +268,6 @@ function onDragMove(e) {
         startX = currentX;
 
         checkAndLoadParticleMesh(animationParams.frame);
-        updateThumbnail();
     }
 }
 function onDragEnd() {
@@ -940,6 +939,7 @@ function animate() {
   
 function render(timestamp, frame) {
     controls.update();
+    updateThumbnail();
 
     let newTime = Date.now();
     dt = newTime - time;
@@ -1005,7 +1005,6 @@ function frameAnimation() {
 
         currentAngle = animationParams.frame * angleIncrementPerFrame;
         vinyl.style.transform = `translateX(-50%) rotate(${currentAngle}deg)`;
-        updateThumbnail();
     }
 
     if (animationParams.isPlaying && animationParams.frame === 2880) {
