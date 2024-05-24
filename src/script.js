@@ -247,6 +247,8 @@ function onDragStart(e) {
     document.body.style.cursor = 'grabbing';
     thumbnailVideo.style.display = 'block';
     thumbnailBack.style.display = 'block';
+    updateThumbnail();
+
 
 }
 
@@ -269,8 +271,6 @@ function onDragMove(e) {
         startX = currentX;
 
         checkAndLoadParticleMesh(animationParams.frame);
-        updateThumbnail();
-
     }
 }
 function onDragEnd() {
@@ -1743,7 +1743,6 @@ function createButton( renderer, sessionInit = {} ) {
 
             const fixParticlePos = document.createElement("div");
             fixParticlePos.id = "fixParticlePos";
-            fixParticlePos.innerHTML = '생성';
 
             fixParticlePos.addEventListener( 'click', function () {
                 isPosfixed = true;
@@ -1768,20 +1767,17 @@ function createButton( renderer, sessionInit = {} ) {
 
             const hideUI = document.createElement("div");
             hideUI.id = "hideUI";
-            hideUI.innerHTML = "UIoff";
 
             hideUI.addEventListener( 'click', function () {
                 if (isUIdisplayed) {
                     fixParticlePos.style.display = 'none';
                     skipScene.style.display = 'none';
                     vinyl.style.display = 'none';
-                    hideUI.innerHTML = "UIon";
                     isUIdisplayed = false;
                 } else {
                     fixParticlePos.style.display = 'block';
                     skipScene.style.display = 'flex';
                     vinyl.style.display = 'block';
-                    hideUI.innerHTML = "UIoff";
                     isUIdisplayed = true;
                 }
             } );
