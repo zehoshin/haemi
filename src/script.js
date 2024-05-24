@@ -248,7 +248,6 @@ function onDragStart(e) {
     thumbnailVideo.style.display = 'block';
     thumbnailBack.style.display = 'block';
 
-    updateThumbnail();
 }
 
 function onDragMove(e) {
@@ -270,6 +269,8 @@ function onDragMove(e) {
         startX = currentX;
 
         checkAndLoadParticleMesh(animationParams.frame);
+        updateThumbnail();
+
     }
 }
 function onDragEnd() {
@@ -1774,16 +1775,12 @@ function createButton( renderer, sessionInit = {} ) {
                     fixParticlePos.style.display = 'none';
                     skipScene.style.display = 'none';
                     vinyl.style.display = 'none';
-                    thumbnailVideo.style.display = 'none';
-                    thumbnailBack.style.display = 'none';
                     hideUI.innerHTML = "UIon";
                     isUIdisplayed = false;
                 } else {
                     fixParticlePos.style.display = 'block';
                     skipScene.style.display = 'flex';
                     vinyl.style.display = 'block';
-                    thumbnailVideo.style.display = 'block';
-                    thumbnailBack.style.display = 'block';
                     hideUI.innerHTML = "UIoff";
                     isUIdisplayed = true;
                 }
