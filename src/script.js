@@ -231,6 +231,9 @@ let currentAngle = 0;
 
 thumbnailVideo.src = './src/thumbnail_video.mp4';
 
+thumbnailVideo.style.display = 'none';
+thumbnailBack.style.display = 'none';
+
 function updateThumbnail() {
     const frameIndex = Math.floor(animationParams.frame / 4);
     const videoTime = frameIndex / 6;
@@ -242,6 +245,9 @@ function onDragStart(e) {
     startX = e.type === 'mousedown' ? e.clientX : e.touches[0].clientX;
     startAngle = currentAngle;
     document.body.style.cursor = 'grabbing';
+    thumbnailVideo.style.display = 'block';
+    thumbnailBack.style.display = 'block';
+
     updateThumbnail();
 }
 
@@ -270,6 +276,8 @@ function onDragMove(e) {
 function onDragEnd() {
     isDragging = false;
     document.body.style.cursor = 'default';
+    thumbnailVideo.style.display = 'none';
+    thumbnailBack.style.display = 'none';
 }
 
 vinyl.addEventListener('mousedown', onDragStart);
