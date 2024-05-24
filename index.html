@@ -9,6 +9,15 @@
 				video { 
 					display: none;
 				}
+				#fixParticlePos {
+					position: absolute;
+					width: 75px;
+					height: 75px;
+					border-radius: 50%;
+					background-color: red;
+					bottom: 200px;
+					right: 30px;
+				}
 			}
 			body {
 				margin: 0;
@@ -32,6 +41,7 @@
 	</head>
 	<body>
 		<video src="./src/0509Haemi.mp4" id="video"></video>
+		<div id="fixParticlePos"></div>
 		<script type="importmap">
 			{
 				"imports": {

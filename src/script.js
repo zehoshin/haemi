@@ -1595,7 +1595,19 @@ function createButton( renderer, sessionInit = {} ) {
                 currentSession.end();
 
             } );
+
+            const fixParticlePos = document.createElement("div");
+            fixParticlePos.id = "fixParticlePos";
+
+
+
+
+
+
+            overlay.appendChild(fixParticlePos);
             overlay.appendChild( svg );
+
+
 
             const path = document.createElementNS( 'http://www.w3.org/2000/svg', 'path' );
             path.setAttribute( 'd', 'M 12,12 L 28,28 M 28,12 12,28' );
@@ -1634,7 +1646,6 @@ function createButton( renderer, sessionInit = {} ) {
             // if (window.innerWidth > 640) {
             // 	document.body.appendChild ( renderer.domElement );
             // }
-            initGUI();
 
             //
 
