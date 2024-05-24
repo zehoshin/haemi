@@ -6,7 +6,7 @@
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 		<style>
 			@media all and ( max-width: 640px ) {
-				video { 
+				#video { 
 					display: none;
 				}
 				#hideUI {
@@ -50,6 +50,35 @@
 					height: 100%;
 					background-color: rgb(100, 100, 100);
 				}
+				#vinyl {
+					z-index: 9998;
+					background-image: url(./src/vinyl.png);
+					width: 262px;
+					height: 262px;
+					position: absolute;
+					bottom: -131px;
+					left: 50%;
+					transform: translateX(-50%) rotate(0deg);
+				}
+				#thumbnail {
+					position: absolute;
+					width: 134px;
+					height: 62px;
+					left: 50%;
+					transform: translateX(-50%);
+					bottom: 100px;
+					z-index: 9999;
+				}
+				#thumbnail_back {
+					background-image: url(./src/thumbnail_back.png);
+					position: absolute;
+					width: 150px;
+					height: 100px;
+					left: 50%;
+					transform: translateX(-50%);
+					bottom: 67px;
+					z-index: 9999;
+				}
 			}
 			body {
 				margin: 0;
@@ -74,18 +103,25 @@
 				font-size: 20px;
 				font-weight: 900;
 			}
+
+
 		</style>
 	</head>
 	<body>
 		<video src="./src/0509Haemi.mp4" id="video"></video>
 		<!-- <div id="hideUI"></div>
-		<div id="fixParticlePos"></div>
-		<div id="skipScene">
+		<div id="fixParticlePos"></div> -->
+		<!-- <div id="skipScene">
 			<div id="scene1" class="scene"></div>
 			<div id="scene2" class="scene"></div>
 			<div id="scene3" class="scene"></div>
 			<div id="scene4" class="scene"></div>
 		</div> -->
+		<!-- <div id="vinyl"></div>
+		<div id="thumbnail_back"></div>
+		<video id="thumbnail" muted src="./src/thumbnail_video.mp4"></video> -->
+		
+		<!-- <img id="vinyl" src="./src/vinyl.png"> -->
 
 		<script type="importmap">
 			{

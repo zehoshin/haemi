@@ -213,8 +213,71 @@ const interval = 1000 / fps; // 각 프레임 간의 시간 (밀리초)
 let lastTime = performance.now();
 let frameCount = 0;
 const maxFrame = 2880; 
+const angleIncrementPerFrame = -360 / maxFrame;
 let currentSceneLoaded = '';
 let currentParticleMesh = '';
+
+let vinyl = document.createElement('div');
+vinyl.id = 'vinyl';
+let thumbnailVideo = document.createElement('video');
+thumbnailVideo.id = 'thumbnailVideo';
+let thumbnailBack = document.createElement('div');
+thumbnailBack.id = 'thumbnailBack';
+
+let isDragging = false;
+let startAngle = 0;
+let startX = 0;
+let currentAngle = 0;
+
+thumbnailVideo.src = './src/thumbnail_video.mp4';
+
+function updateThumbnail() {
+    const frameIndex = Math.floor(animationParams.frame / 4);
+    const videoTime = frameIndex / 6;
+    thumbnailVideo.currentTime = videoTime;
+}
+
+function onDragStart(e) {
+    isDragging = true;
+    startX = e.type === 'mousedown' ? e.clientX : e.touches[0].clientX;
+    startAngle = currentAngle;
+    document.body.style.cursor = 'grabbing';
+}
+
+function onDragMove(e) {
+    if (isDragging) {
+        const currentX = e.type === 'mousemove' ? e.clientX : e.touches[0].clientX;
+        const dx = currentX - startX;
+        currentAngle = startAngle + dx;
+        vinyl.style.transform = `translateX(-50%) rotate(${currentAngle}deg)`;
+
+        const angleChange = currentAngle - startAngle;
+        const frameChange = Math.round(angleChange / angleIncrementPerFrame);
+
+        animationParams.frame = (animationParams.frame + frameChange) % maxFrame;
+        if (animationParams.frame < 0) {
+            animationParams.frame += maxFrame;
+        }
+        
+        startAngle = currentAngle;
+        startX = currentX;
+
+        checkAndLoadParticleMesh(animationParams.frame);
+        updateThumbnail();
+    }
+}
+function onDragEnd() {
+    isDragging = false;
+    document.body.style.cursor = 'default';
+}
+
+vinyl.addEventListener('mousedown', onDragStart);
+vinyl.addEventListener('touchstart', onDragStart, { passive: true });
+document.addEventListener('mousemove', onDragMove);
+document.addEventListener('touchmove', onDragMove, { passive: true });
+document.addEventListener('mouseup', onDragEnd);
+document.addEventListener('touchend', onDragEnd);
+
 
 const animationParams = {
     frame: 0,
@@ -337,6 +400,7 @@ function init() {
     initSimulator();
     loadParticlesGLB();
     initGlowMesh();
+
 
     animate();
     requestAnimationFrame(frameAnimation);
@@ -931,6 +995,10 @@ function frameAnimation() {
         animationParams.frame += 1;
         frameCount += 1;
         lastTime = now - (deltaTime % interval);
+
+        currentAngle = animationParams.frame * angleIncrementPerFrame;
+        vinyl.style.transform = `translateX(-50%) rotate(${currentAngle}deg)`;
+        updateThumbnail();
     }
 
     if (animationParams.isPlaying && animationParams.frame === 2880) {
@@ -1731,9 +1799,13 @@ function createButton( renderer, sessionInit = {} ) {
             skipScene.appendChild(scene4);
 
             overlay.appendChild(fixParticlePos);
-            overlay.appendChild(skipScene);
+            // overlay.appendChild(skipScene);
             overlay.appendChild(hideUI);
             overlay.appendChild(log)
+            overlay.appendChild( vinyl );
+            overlay.appendChild( thumbnailVideo );
+            overlay.appendChild( thumbnailBack );
+
             overlay.appendChild( svg );
 
             const path = document.createElementNS( 'http://www.w3.org/2000/svg', 'path' );
