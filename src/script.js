@@ -220,9 +220,9 @@ let currentParticleMesh = '';
 let vinyl = document.createElement('div');
 vinyl.id = 'vinyl';
 let thumbnailVideo = document.createElement('video');
-thumbnailVideo.id = 'thumbnailVideo';
+thumbnailVideo.id = 'thumbnail';
 let thumbnailBack = document.createElement('div');
-thumbnailBack.id = 'thumbnailBack';
+thumbnailBack.id = 'thumbnailack';
 
 let isDragging = false;
 let startAngle = 0;
@@ -1763,10 +1763,16 @@ function createButton( renderer, sessionInit = {} ) {
                 if (isUIdisplayed) {
                     fixParticlePos.style.display = 'none';
                     skipScene.style.display = 'none';
+                    vinyl.style.display = 'none';
+                    thumbnailVideo.style.display = 'none';
+                    thumbnailBack.style.display = 'none';
                     isUIdisplayed = false;
                 } else {
                     fixParticlePos.style.display = 'block';
                     skipScene.style.display = 'flex';
+                    vinyl.style.display = 'block';
+                    thumbnailVideo.style.display = 'block';
+                    thumbnailBack.style.display = 'block';
                     isUIdisplayed = true;
                 }
             } );
