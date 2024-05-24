@@ -1634,10 +1634,18 @@ function createButton( renderer, sessionInit = {} ) {
                 }
             } );
 
-            scene1.addEventListener( 'click', skipToFrame(0) );
-            scene2.addEventListener( 'click', skipToFrame(720) );
-            scene3.addEventListener( 'click', skipToFrame(1440) );
-            scene4.addEventListener( 'click', skipToFrame(2160) );
+            scene1.addEventListener( 'click', function () {
+                skipToFrame(0);
+            } );
+            scene2.addEventListener( 'click', function () {
+                skipToFrame(720);
+            } );
+            scene3.addEventListener( 'click', function () {
+                skipToFrame(1440);
+            } );
+            scene4.addEventListener( 'click', function () {
+                skipToFrame(2160);
+            } );
 
 
             skipScene.appendChild(scene1);
