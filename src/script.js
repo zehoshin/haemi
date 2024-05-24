@@ -861,7 +861,6 @@ function animate() {
 function render(timestamp, frame) {
     controls.update();
 
-    
     let newTime = Date.now();
     dt = newTime - time;
     time = newTime;
@@ -938,13 +937,18 @@ function frameAnimation() {
 
     if (animationParams.frame < 720) {
 
+        if (animationParams.frame < 72) {
+            settings.dieSpeed = 0.1;
+        } else {
+            settings.dieSpeed = 0.001;
+        }
+
         //simul
         if (settings.speed < 0.5) {
             settings.speed += 0.002;
         } else if (settings.speed > 0.5) {
             settings.speed -= 0.002;
         }
-        settings.dieSpeed = 0.001;
         if (settings.radius < 1.5) {
             settings.radius += 0.01;
         } else if (settings.radius > 1.5) {
