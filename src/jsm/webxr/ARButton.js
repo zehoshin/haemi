@@ -59,7 +59,7 @@ class ARButton {
 				sessionInit.domOverlay.root.style.display = '';
 
 				//
-
+				document.body.appendChild ( renderer.domElement );
 
 				//
 

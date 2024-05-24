@@ -2,14 +2,12 @@ import * as THREE from 'three'
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { ARButton } from 'three/addons/webxr/ARButton.js';
+// import { ARButton } from 'three/addons/webxr/ARButton.js';
 import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js'
 
 let predictScene = '';
 let isSkipped = false;
 let fromScene1 = false;
-let fromScene3 = false;
-
 
 const settings = {
     //amount
@@ -259,7 +257,6 @@ let colorIndices, glowTimings;
 let reticle, controller;
 let hitTestSource = null;
 let hitTestSourceRequested = false;
-let lastValidPosition = new THREE.Vector3();
 
 const video = document.getElementById('video');
 
@@ -293,8 +290,9 @@ function init() {
     renderer.xr.enabled = true;
     renderer.setClearColor( 0x000000, 1.0 )
 
+    // if (window.innerWidth > 640) {
     document.body.appendChild ( renderer.domElement );
-    document.body.appendChild( ARButton.createButton( renderer, { requiredFeatures: [ 'hit-test' ] } ));
+    // }
     
     //webXR
 
@@ -316,17 +314,6 @@ function init() {
     defaultLight.position.set( 0.5, 1, 0.25 );
     scene.add( defaultLight );
 
-    //load GLB Scene 
-
-    // loader.load('./src/models/scene3.glb', function (gltf) {
-    //     glbModel = gltf.scene;
-    //     let scaleFactor = 1;
-    //     glbModel.position.y = -0.5;
-    //     glbModel.position.z = 6;
-    //     glbModel.scale.set(scaleFactor, scaleFactor, scaleFactor);
-    //     scene.add(glbModel);
-    // });
-
     //controls
 
     window.addEventListener('keyup', onKeyUp);
@@ -345,6 +332,8 @@ function init() {
     animate();
     requestAnimationFrame(frameAnimation);
     setInterval(logFPS, 1000);
+
+    document.body.appendChild( createButton( renderer, { requiredFeatures: [ 'hit-test' ] } ));
 }
 
 //#########SIMULATION##########
@@ -708,7 +697,7 @@ function createParticleMesh(model) {
         uniform sampler2D textureScale;
         uniform vec2 resolution;
         uniform float time;
-        uniform vec3 meshPosition; // Add this uniform
+        uniform vec3 meshPosition;
         attribute float colorIndex;
         attribute float glowTiming;
         varying float vColorIndex;
@@ -879,7 +868,6 @@ function render(timestamp, frame) {
 
     initAnimation = Math.min(initAnimation + dt * 0.00025, 1);
     if (animationParams.isPlaying && animationParams.frame < maxFrame) {
-
     updateSimulator(dt);
     updateParticles(dt);
     }
@@ -941,7 +929,7 @@ function frameAnimation() {
         animationParams.isPlaying = false;
     }
 
-    console.log(settings.currentModel)
+    console.log(predictScene)
 
     if (window.innerWidth > 640) {
     checkAndLoadScene(animationParams.frame);
@@ -983,8 +971,8 @@ function frameAnimation() {
         //scale
         settings.currentModel = 'Petal';
         settings.currentScene = 'scene1';
-        if(settings.scaleFactor != 0.6) {
-            settings.scaleFactor = 0.6;
+        if(settings.scaleFactor != 0.4) {
+            settings.scaleFactor = 0.4;
             updateScaleTexture();
         }
         settings.varScaleFactor = 0.6;
@@ -998,15 +986,15 @@ function frameAnimation() {
 
         if (predictScene != 'scene1' || isSkipped) {
             isSkipped = false;
-            if (settings.opacity <= 0.005) {
+            if (settings.opacity <= 0.008) {
                 settings.opacity += 0.0001;
-            } else if (settings.opacity >= 0.005) {
+            } else if (settings.opacity >= 0.008) {
                 settings.opacity -= 0.0001;
             }
             if (settings.parOpacity <= 1.0) {
                 settings.parOpacity += 0.002;
             }
-            if (settings.opacity >= 0.005 && settings.opacity <= 0.0051 && settings.parOpacity >= 1.0) {
+            if (settings.opacity >= 0.008 && settings.opacity <= 0.0081 && settings.parOpacity >= 1.0) {
                 isSkipped = false;
                 predictScene = 'scene1';
             }
@@ -1150,15 +1138,15 @@ function frameAnimation() {
 
         if (predictScene != 'scene3' || isSkipped) {
             isSkipped = false;
-            if (settings.opacity <= 0.06) {
+            if (settings.opacity <= 0.02) {
                 settings.opacity += 0.0001;
-            } else if (settings.opacity >= 0.06) {
+            } else if (settings.opacity >= 0.02) {
                 settings.opacity -= 0.0001;
             }
             if (settings.parOpacity <= 1.0) {
                 settings.parOpacity += 0.002;
             }
-            if (settings.opacity >= 0.06 && settings.opacity <= 0.061 && settings.parOpacity >= 1.0) {
+            if (settings.opacity >= 0.02 && settings.opacity <= 0.021 && settings.parOpacity >= 1.0) {
                 isSkipped = false;
                 predictScene = 'scene3';
             }
@@ -1172,9 +1160,6 @@ function frameAnimation() {
                 settings.opacity -= 0.0001;
             }
         }
-        if (animationParams.frame === 2140) {
-            fromScene3 = true;
-        }
     }
 
     if (animationParams.frame >= 2160) {
@@ -1185,10 +1170,7 @@ function frameAnimation() {
         } else if (settings.speed > 0.75) {
             settings.speed -= 0.002;
         }
-        if (fromScene3 && animationParams.frame === 2160) {
-            fromScene3 = false;
-            settings.dieSpeed = 0.05;
-        }
+
         if (settings.dieSpeed >= 0.004) {
             settings.dieSpeed -= 0.0002
         } else if (settings.dieSpeed <= 0.004) {
@@ -1269,7 +1251,7 @@ function playAnimation() {
         animationParams.isPlaying = true;
         lastTime = performance.now();
         scene.add(particleMesh);
-        // scene.add(glowMesh);
+        scene.add(glowMesh);
         frameAnimation();
 
         if (window.innerWidth > 640) {
@@ -1301,7 +1283,8 @@ function resetAnimation() {
         scene.remove(particleMesh);
         scene.remove(glowMesh);
     }
-
+    settings.parOpacity = 0;
+    settings.opacity = 0;
 }
 
 function skipToFrame(frame) {
@@ -1546,7 +1529,7 @@ function initGUI() {
     glowFolder.add( settings, 'opacity', 0, 1).listen();
 
 
-
+    gui.close();
 }
 
 function loadPreset(presetName) {
@@ -1582,3 +1565,243 @@ function savePreset(presetName) {
 function updateGUI() {
     gui.controllersRecursive().forEach(controller => controller.updateDisplay());
 }
+
+function createButton( renderer, sessionInit = {} ) {
+
+    const button = document.createElement( 'button' );
+
+    function showStartAR( /*device*/ ) {
+
+        if ( sessionInit.domOverlay === undefined ) {
+
+            const overlay = document.createElement( 'div' );
+            overlay.id = 'overlay';
+            overlay.style.display = 'none';
+            document.body.appendChild( overlay );
+
+            const svg = document.createElementNS( 'http://www.w3.org/2000/svg', 'svg' );
+            svg.setAttribute( 'width', 38 );
+            svg.setAttribute( 'height', 38 );
+            svg.style.position = 'absolute';
+            svg.style.right = '20px';
+            svg.style.top = '20px';
+            svg.addEventListener( 'click', function () {
+
+                currentSession.end();
+
+            } );
+            overlay.appendChild( svg );
+
+            const path = document.createElementNS( 'http://www.w3.org/2000/svg', 'path' );
+            path.setAttribute( 'd', 'M 12,12 L 28,28 M 28,12 12,28' );
+            path.setAttribute( 'stroke', '#fff' );
+            path.setAttribute( 'stroke-width', 2 );
+            svg.appendChild( path );
+
+            if ( sessionInit.optionalFeatures === undefined ) {
+
+                sessionInit.optionalFeatures = [];
+
+            }
+
+            sessionInit.optionalFeatures.push( 'dom-overlay' );
+            sessionInit.domOverlay = { root: overlay };
+
+        }
+
+        //
+
+        let currentSession = null;
+
+        async function onSessionStarted( session ) {
+
+            session.addEventListener( 'end', onSessionEnded );
+
+            renderer.xr.setReferenceSpaceType( 'local' );
+
+            await renderer.xr.setSession( session );
+
+            button.textContent = 'STOP AR';
+            sessionInit.domOverlay.root.style.display = '';
+
+            //
+            
+            // if (window.innerWidth > 640) {
+            // 	document.body.appendChild ( renderer.domElement );
+            // }
+            initGUI();
+
+            //
+
+            currentSession = session;
+
+        }
+
+        function onSessionEnded( /*event*/ ) {
+
+            currentSession.removeEventListener( 'end', onSessionEnded );
+
+            button.textContent = 'START AR';
+            sessionInit.domOverlay.root.style.display = 'none';
+
+            currentSession = null;
+
+        }
+
+        //
+
+        button.style.display = '';
+
+        button.style.cursor = 'pointer';
+        button.style.left = 'calc(50% - 50px)';
+        button.style.width = '100px';
+
+        button.textContent = 'START AR';
+
+        button.onmouseenter = function () {
+
+            button.style.opacity = '1.0';
+
+        };
+
+        button.onmouseleave = function () {
+
+            button.style.opacity = '0.5';
+
+        };
+
+        button.onclick = function () {
+
+            if ( currentSession === null ) {
+
+                navigator.xr.requestSession( 'immersive-ar', sessionInit ).then( onSessionStarted );
+
+            } else {
+
+                currentSession.end();
+
+                if ( navigator.xr.offerSession !== undefined ) {
+
+                    navigator.xr.offerSession( 'immersive-ar', sessionInit )
+                        .then( onSessionStarted )
+                        .catch( ( err ) => {
+
+                            console.warn( err );
+
+                        } );
+
+                }
+
+            }
+
+        };
+
+        if ( navigator.xr.offerSession !== undefined ) {
+
+            navigator.xr.offerSession( 'immersive-ar', sessionInit )
+                .then( onSessionStarted )
+                .catch( ( err ) => {
+
+                    console.warn( err );
+
+                } );
+
+        }
+
+    }
+
+    function disableButton() {
+
+        button.style.display = '';
+
+        button.style.cursor = 'auto';
+        button.style.left = 'calc(50% - 75px)';
+        button.style.width = '150px';
+
+        button.onmouseenter = null;
+        button.onmouseleave = null;
+
+        button.onclick = null;
+
+    }
+
+    function showARNotSupported() {
+
+        disableButton();
+
+        button.textContent = 'AR NOT SUPPORTED';
+
+    }
+
+    function showARNotAllowed( exception ) {
+
+        disableButton();
+
+        console.warn( 'Exception when trying to call xr.isSessionSupported', exception );
+
+        button.textContent = 'AR NOT ALLOWED';
+
+    }
+
+    function stylizeElement( element ) {
+
+        element.style.position = 'absolute';
+        element.style.bottom = '20px';
+        element.style.padding = '12px 6px';
+        element.style.border = '1px solid #fff';
+        element.style.borderRadius = '4px';
+        element.style.background = 'rgba(0,0,0,0.1)';
+        element.style.color = '#fff';
+        element.style.font = 'normal 13px sans-serif';
+        element.style.textAlign = 'center';
+        element.style.opacity = '0.5';
+        element.style.outline = 'none';
+        element.style.zIndex = '999';
+
+    }
+
+    if ( 'xr' in navigator ) {
+
+        button.id = 'ARButton';
+        button.style.display = 'none';
+
+        stylizeElement( button );
+
+        navigator.xr.isSessionSupported( 'immersive-ar' ).then( function ( supported ) {
+
+            supported ? showStartAR() : showARNotSupported();
+
+        } ).catch( showARNotAllowed );
+
+        return button;
+
+    } else {
+
+        const message = document.createElement( 'a' );
+
+        if ( window.isSecureContext === false ) {
+
+            message.href = document.location.href.replace( /^http:/, 'https:' );
+            message.innerHTML = 'WEBXR NEEDS HTTPS'; // TODO Improve message
+
+        } else {
+
+            message.href = 'https://immersiveweb.dev/';
+            message.innerHTML = 'WEBXR NOT AVAILABLE';
+
+        }
+
+        message.style.left = 'calc(50% - 90px)';
+        message.style.width = '180px';
+        message.style.textDecoration = 'none';
+
+        stylizeElement( message );
+
+        return message;
+
+    }
+
+}
+
+
+
