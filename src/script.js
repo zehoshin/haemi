@@ -1249,8 +1249,10 @@ function playAnimation() {
     if (!animationParams.isPlaying) {
         animationParams.isPlaying = true;
         lastTime = performance.now();
-        scene.add(particleMesh);
-        scene.add(glowMesh);
+        if(!particleMesh && !glowMesh) {
+            scene.add(particleMesh);
+            scene.add(glowMesh);
+        }
         frameAnimation();
 
         if (window.innerWidth > 640) {
@@ -1392,6 +1394,10 @@ function onSelect() {
 
 renderer.xr.addEventListener( 'sessionstart', function ( event ) {
     console.log('onAR')
+    if(!particleMesh && !glowMesh) {
+        scene.add(particleMesh);
+        scene.add(glowMesh);
+    }
 } );
 
 renderer.xr.addEventListener( 'sessionend', function ( event ) {
