@@ -270,7 +270,6 @@ function onDragMove(e) {
         startX = currentX;
 
         checkAndLoadParticleMesh(animationParams.frame);
-        updateThumbnail();
     }
 }
 function onDragEnd() {
