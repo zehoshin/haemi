@@ -17,6 +17,17 @@
 					background-color: red;
 					bottom: 200px;
 					right: 30px;
+					z-index: 9999;
+				}
+				#fakefixParticlePos {
+					position: absolute;
+					width: 75px;
+					height: 75px;
+					border-radius: 50%;
+					background-color: red;
+					bottom: 200px;
+					right: 30px;
+					z-index: 9999;
 				}
 			}
 			body {
@@ -41,7 +52,7 @@
 	</head>
 	<body>
 		<video src="./src/0509Haemi.mp4" id="video"></video>
-		<!-- <div id="fixParticlePos"></div> -->
+		<div id="fakefixParticlePos"></div>
 		<script type="importmap">
 			{
 				"imports": {
