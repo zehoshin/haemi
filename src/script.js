@@ -233,7 +233,6 @@ const modelPaths = [
 
 const sceneNames = ['scene1', 'scene2', 'scene3', 'scene4'];
 
-
 let camera, simulCamera, scene, simulScene, renderer, controls, gui;
 const loader = new GLTFLoader();
 
@@ -271,7 +270,7 @@ function init() {
 
     scene = new THREE.Scene();
     if (window.innerWidth > 640) {
-        scene.background = new THREE.Color( 0x000000 );
+    scene.background = new THREE.Color( 0x000000 );
     }
 
     camera = new THREE.PerspectiveCamera( 90, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -941,6 +940,8 @@ function frameAnimation() {
     if (animationParams.isPlaying && animationParams.frame === 2880) {
         animationParams.isPlaying = false;
     }
+
+    console.log(settings.currentModel)
 
     if (window.innerWidth > 640) {
     checkAndLoadScene(animationParams.frame);
