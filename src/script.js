@@ -857,6 +857,9 @@ function animationFrame() {
     }
 
     if (onAR) {
+        settings.opacity = 0.02;
+        settings.glowInternalRadius = 0.0;
+
         if (opacityFlag) {
             settings.opacity += 0.00025;
             if (settings.opacity >= 0.04) {
@@ -871,16 +874,18 @@ function animationFrame() {
             }
         }
     } else {
+        settings.opacity = 0.2;
+        settings.glowInternalRadius = 5.0;
         if (opacityFlag) {
             settings.opacity += 0.00025;
-            if (settings.opacity >= 0.1) {
-                settings.opacity = 0.1;
+            if (settings.opacity >= 0.2) {
+                settings.opacity = 0.2;
                 opacityFlag = false;
             }
         } else {
             settings.opacity -= 0.00025;
-            if (settings.opacity <= 0.05) {
-                settings.opacity = 0.05;
+            if (settings.opacity <= 0.075) {
+                settings.opacity = 0.075;
                 opacityFlag = true;
             }
         }
