@@ -202,8 +202,7 @@ const presets = {
 };
 
 //frame animation
-let isPlaying = false;
-
+let hasAnimationPlayed = false;
 let speedFlag = true;
 let dieSpeedFlag = true;
 let radiusFlag = true;
@@ -259,10 +258,9 @@ let colorIndices, glowTimings;
 let reticle, controller;
 let hitTestSource = null;
 let hitTestSourceRequested = false;
+let onAR = false;
 
-const video = document.getElementById('video');
-
-init()
+init();
 
 function init() {
     //set Render Scene
@@ -273,8 +271,8 @@ function init() {
     }
 
     camera = new THREE.PerspectiveCamera( 90, window.innerWidth / window.innerHeight, 0.1, 10000);
-    camera.position.set( -0.3326, 6.2612, 8.2365 );
-    camera.rotation.set( -0.7213, -0.0254, -0.0223 );
+    camera.position.set( -0.7797542428085145, 6.072004978334489, 5.619455596230064 );
+    camera.rotation.set( -0.9380921340515062, -0.13426529909466958, -0.18056813054902943 );
 
     renderer = new THREE.WebGLRenderer({
         antialias : true,
@@ -626,6 +624,7 @@ function initParticles() {
 
     particleMesh = createParticleMesh(glbModel);
     particleMesh.renderOrder = 2;
+
     // scene.add(particleMesh);
 }
 
@@ -765,9 +764,12 @@ function render(timestamp, frame) {
     updateSimulator(dt);
     updateParticles(dt);
 
-    if (isPlaying) {
-        animationFrame();
+    if (particleMesh && !hasAnimationPlayed && glowMesh) {
+        playAnimation();
+        hasAnimationPlayed = true;
     }
+
+    animationFrame();
 
     if ( frame ) {
         const referenceSpace = renderer.xr.getReferenceSpace();
@@ -794,7 +796,7 @@ function render(timestamp, frame) {
                 reticle.visible = false;
             }
         }
-    }
+    }  
 
     // if (!reticle.visible && particleMesh && glowMesh) {
     //     particleMesh.position.copy(lastValidPosition);
@@ -854,17 +856,33 @@ function animationFrame() {
         }
     }
 
-    if (opacityFlag) {
-        settings.opacity += 0.00025;
-        if (settings.opacity >= 0.04) {
-            settings.opacity = 0.04;
-            opacityFlag = false;
+    if (onAR) {
+        if (opacityFlag) {
+            settings.opacity += 0.00025;
+            if (settings.opacity >= 0.04) {
+                settings.opacity = 0.04;
+                opacityFlag = false;
+            }
+        } else {
+            settings.opacity -= 0.00025;
+            if (settings.opacity <= 0.02) {
+                settings.opacity = 0.02;
+                opacityFlag = true;
+            }
         }
     } else {
-        settings.opacity -= 0.00025;
-        if (settings.opacity <= 0.02) {
-            settings.opacity = 0.02;
-            opacityFlag = true;
+        if (opacityFlag) {
+            settings.opacity += 0.00025;
+            if (settings.opacity >= 0.1) {
+                settings.opacity = 0.1;
+                opacityFlag = false;
+            }
+        } else {
+            settings.opacity -= 0.00025;
+            if (settings.opacity <= 0.05) {
+                settings.opacity = 0.05;
+                opacityFlag = true;
+            }
         }
     }
 
@@ -917,36 +935,7 @@ function animationFrame() {
 
 
 function playAnimation() {
-    if (!isPlaying) {
-        isPlaying = true;
-        
-        updateParticleMesh(models[1])
-
-        if (window.innerWidth > 640) {
-            video.play();
-        }
-    }
-}
-
-function stopAnimation() {
-    isPlaying = false;
-    if (window.innerWidth > 640) {
-        video.pause();
-    }
-}
-
-function resetAnimation() {
-    isPlaying = false;
-    if (window.innerWidth > 640) {
-        video.currentTime = 0 / 24;
-        video.pause();
-    }
-    if (particleMesh && glowMesh) {
-        scene.remove(particleMesh);
-        scene.remove(glowMesh);
-    }
-    settings.parOpacity = 0;
-    settings.opacity = 0;
+    updateParticleMesh(models[1])
 }
 
 function hexToRgb(hex) {
@@ -1017,6 +1006,7 @@ function onSelect() {
 
 renderer.xr.addEventListener( 'sessionstart', function ( event ) {
     console.log('onAR')
+    onAR = true;
     if(!particleMesh && !glowMesh) {
         scene.add(particleMesh);
         scene.add(glowMesh);
@@ -1057,8 +1047,6 @@ function initGUI() {
     const glowFolder = gui.addFolder( 'glow' );
 
     animationFolder.add({ play: playAnimation }, 'play').name('Play');
-    animationFolder.add({ stop: stopAnimation }, 'stop').name('Stop');
-    animationFolder.add({ reset: resetAnimation }, 'reset').name('Reset');
     
     sceneFolder.add({ Scene1: () => loadGLBScene('scene1') }, 'Scene1').name('Scene 1');
     sceneFolder.add({ Scene2: () => loadGLBScene('scene2') }, 'Scene2').name('Scene 2');

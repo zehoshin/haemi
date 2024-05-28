@@ -6,9 +6,6 @@
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 		<style>
 			@media all and ( max-width: 640px ) {
-				#video { 
-					display: none;
-				}
 				#hideUI {
 					position: absolute;
 					width: 75px;
@@ -33,6 +30,7 @@
 			body {
 				margin: 0;
 				overflow: hidden;
+				background-color: black;
 			}
 			canvas {
 				position: absolute;
@@ -41,24 +39,11 @@
 				width: 100dvw;
 				height: 100dvh;
 			}
-			video {
-				position: absolute;
-				z-index: 9999;
-				width: 50%;
-				left: 50%;
-				transform: translateX(-50%);
-			}
-			#log {
-				color: red;
-				font-size: 20px;
-				font-weight: 900;
-			}
-
-
 		</style>
 	</head>
 	<body>
-		<video src="./src/0509Haemi.mp4" id="video"></video>
+		<div id="forCanvas"></div>
+		<div id="backGround"></div>
 		<!-- <div id="hideUI"></div>
 		<div id="fixParticlePos"></div> -->
 
