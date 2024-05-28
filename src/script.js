@@ -5,13 +5,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 // import { ARButton } from 'three/addons/webxr/ARButton.js';
 import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js'
 
-let predictScene = '';
-let isSkipped = false;
-let fromScene1 = false;
-
 const overlay = document.createElement( 'div' );
-const log = document.createElement('div');
-log.id = 'log';
 
 const settings = {
     //amount
@@ -25,22 +19,22 @@ const settings = {
     curlSize: 0.015,
     attraction: -2.0,
     tornadoStrength: 2.0,
-    circleRadius: 0,
-    circleHeight: 25,
+    circleRadius: 600,
+    circleHeight: 60,
 
     //color
     lightIntensity: 0.7,
     glowIntensity: 0.2,
-    metalness: 0.3,
+    metalness: 0.0,
     roughness: 1.0,
-    color1: '#cfd945',
-    color2: '#448717',
+    color1: '#e8ff38',
+    color2: '#f514cc',
     parOpacity: 0.0,
     
     //scale
     currentModel: 'Petal',
     currentScene: 'scene1',
-    scaleFactor: 0.6,
+    scaleFactor: 1.0,
     varScaleFactor: 0.6,
     wholeScale: 0.006,
 
@@ -49,7 +43,7 @@ const settings = {
     glowInternalRadius: 0.0,
     glowColor: '#66ff00',
     glowSharpness: 0.0,
-    opacity: 0.0,
+    opacity: 0.00,
 };
 
 const presets = {
@@ -192,7 +186,7 @@ const presets = {
         parOpacity: 1.0,
 
         //scale
-        currentModel: 'butterfly',
+        currentModel: 'flower',
         currentScene: 'scene4',
         scaleFactor: 0.3,
         varScaleFactor: 1.0,
@@ -208,102 +202,35 @@ const presets = {
 };
 
 //frame animation
-const fps = 24;
-const interval = 1000 / fps; // 각 프레임 간의 시간 (밀리초)
-let lastTime = performance.now();
-let frameCount = 0;
-const maxFrame = 2880; 
-const angleIncrementPerFrame = -360 / maxFrame;
-let currentSceneLoaded = '';
-let currentParticleMesh = '';
+let isPlaying = false;
 
-let vinyl = document.createElement('div');
-vinyl.id = 'vinyl';
-let thumbnailVideo = document.createElement('video');
-thumbnailVideo.id = 'thumbnail';
-let thumbnailBack = document.createElement('div');
-thumbnailBack.id = 'thumbnail_back';
-
-let isDragging = false;
-let startAngle = 0;
-let startX = 0;
-let currentAngle = 0;
-
-thumbnailVideo.src = './src/thumbnail_video.mp4';
-
-thumbnailVideo.style.display = 'none';
-thumbnailBack.style.display = 'none';
-
-function updateThumbnail() {
-    const frameIndex = Math.floor(animationParams.frame / 4);
-    const videoTime = frameIndex / 6;
-    thumbnailVideo.currentTime = videoTime;
-}
-
-function onDragStart(e) {
-    isDragging = true;
-    startX = e.type === 'mousedown' ? e.clientX : e.touches[0].clientX;
-    startAngle = currentAngle;
-    document.body.style.cursor = 'grabbing';
-    thumbnailVideo.style.display = 'block';
-    thumbnailBack.style.display = 'block';
-}
-
-function onDragMove(e) {
-    if (isDragging) {
-        const currentX = e.type === 'mousemove' ? e.clientX : e.touches[0].clientX;
-        const dx = currentX - startX;
-        currentAngle = startAngle + dx;
-        vinyl.style.transform = `translateX(-50%) rotate(${currentAngle}deg)`;
-
-        const angleChange = currentAngle - startAngle;
-        const frameChange = Math.round(angleChange / angleIncrementPerFrame);
-
-        animationParams.frame = (animationParams.frame + frameChange) % maxFrame;
-        if (animationParams.frame < 0) {
-            animationParams.frame += maxFrame;
-        }
-        
-        startAngle = currentAngle;
-        startX = currentX;
-
-        checkAndLoadParticleMesh(animationParams.frame);
-        updateThumbnail();
-    }
-}
-function onDragEnd() {
-    isDragging = false;
-    document.body.style.cursor = 'default';
-    thumbnailVideo.style.display = 'none';
-    thumbnailBack.style.display = 'none';
-}
-
-vinyl.addEventListener('mousedown', onDragStart);
-vinyl.addEventListener('touchstart', onDragStart, { passive: true });
-document.addEventListener('mousemove', onDragMove);
-document.addEventListener('touchmove', onDragMove, { passive: true });
-document.addEventListener('mouseup', onDragEnd);
-document.addEventListener('touchend', onDragEnd);
-
-
-const animationParams = {
-    frame: 0,
-    isPlaying: false,
-};
+let speedFlag = true;
+let dieSpeedFlag = true;
+let radiusFlag = true;
+let opacityFlag = true;
+let circleRadiusFlag = true;
+let colorFlag = true;
+let colorFactor = 0.0;
+let lightFlag = true;
 
 let TEXTURE_WIDTH = settings.textureWidth;
 let TEXTURE_HEIGHT = settings.textureHeight;
 let AMOUNT = TEXTURE_WIDTH * TEXTURE_HEIGHT;
 
 const models = [];
-const modelNames = ['Petal', 'flower', 'butterfly'];
+const modelNames = ['Petal', 'flower'];
 const modelPaths = [
     './src/models/Petal.glb',
     './src/models/flower.glb', 
-    './src/models/butterfly.glb'
 ];
 
 const sceneNames = ['scene1', 'scene2', 'scene3', 'scene4'];
+const scenePaths = {
+    'scene1': './src/models/scene1.glb',
+    'scene2': './src/models/scene2.glb',
+    'scene3': './src/models/scene3.glb',
+    'scene4': './src/models/scene4.glb'
+};
 
 let camera, simulCamera, scene, simulScene, renderer, controls, gui;
 const loader = new GLTFLoader();
@@ -314,6 +241,7 @@ let dt;
 //particles
 let particleMesh;
 let glowMesh;
+const yPos = 0.5;
 
 //simulator
 let copyShader, positionShader, textureDefaultPosition, positionRenderTarget, positionRenderTarget2, rotationTexture, scaleTexture;
@@ -345,10 +273,8 @@ function init() {
     }
 
     camera = new THREE.PerspectiveCamera( 90, window.innerWidth / window.innerHeight, 0.1, 10000);
-    camera.position.set( -0.3326, 6.2612, 
-        8.2365 );
-    camera.rotation.set( 
-        -0.7213, -0.0254, -0.0223 );
+    camera.position.set( -0.3326, 6.2612, 8.2365 );
+    camera.rotation.set( -0.7213, -0.0254, -0.0223 );
 
     renderer = new THREE.WebGLRenderer({
         antialias : true,
@@ -390,7 +316,6 @@ function init() {
 
     //controls
 
-    window.addEventListener('keyup', onKeyUp);
     controls = new OrbitControls( camera, renderer.domElement );
     controls.update();
     window.addEventListener('resize', onWindowResize, false);
@@ -401,18 +326,14 @@ function init() {
 
     //GUI
     initGUI();
-    initGUIforAR();
 
     //init Simulator & Particles & Glow
     initSimulator();
     loadParticlesGLB();
     initGlowMesh();
-
+    loadGLBScene('scene1')
 
     animate();
-    requestAnimationFrame(frameAnimation);
-    setInterval(logFPS, 1000);
-
     document.body.appendChild( createButton( renderer, { requiredFeatures: [ 'hit-test' ] } ));
 }
 
@@ -680,15 +601,9 @@ function loadParticlesGLB() {
     const loader = new GLTFLoader();
     modelPaths.forEach(path => {
         loader.load(path, function(gltf) {
-            if (path === './src/models/butterfly.glb') {
-                gltf.scene.children.forEach(child => {
-                    models.push(child);
-                });
+            const model = gltf.scene.children[0];
+            models.push(model);
 
-            } else {
-                const model = gltf.scene.children[0];
-                models.push(model);
-            }
             console.log(`${path} loaded and added to models array.`);
 
             if (models.length >= modelPaths.length) {
@@ -696,7 +611,7 @@ function loadParticlesGLB() {
             }
         });
     });
-    console.log(models)
+    console.log(models);
 }
 
 function initParticles() {
@@ -712,14 +627,14 @@ function initParticles() {
 }
 
 function createParticleMesh(model) {
-    const geometries = [];
-    model.traverse((child) => {
-        if (child.isMesh) {
-            geometries.push(child.geometry);
-        }
-    });
-    const mergedGeometry = BufferGeometryUtils.mergeGeometries(geometries);
-    // const geometry = model.geometry;
+    // const geometries = [];
+    // model.traverse((child) => {
+    //     if (child.isMesh) {
+    //         geometries.push(child.geometry);
+    //     }
+    // });
+    // const mergedGeometry = BufferGeometryUtils.mergeGeometries(geometries);
+    const geometry = model.geometry;
     const material = new THREE.ShaderMaterial({
         vertexShader: document.getElementById('vertexShader').textContent,
         fragmentShader: document.getElementById('fragmentShader').textContent,
@@ -744,7 +659,7 @@ function createParticleMesh(model) {
         depthTest: false,
         depthWrite: false,
     });
-    const mesh = new THREE.InstancedMesh(mergedGeometry, material, AMOUNT);
+    const mesh = new THREE.InstancedMesh(geometry, material, AMOUNT);
 
     colorIndices = new Float32Array(AMOUNT);
     glowTimings = new Float32Array(AMOUNT);  
@@ -754,112 +669,10 @@ function createParticleMesh(model) {
         glowTimings[i] = Math.random() * 100.0;
     }
 
-    mergedGeometry.setAttribute('colorIndex', new THREE.InstancedBufferAttribute(colorIndices, 1));
-    mergedGeometry.setAttribute('glowTiming', new THREE.InstancedBufferAttribute(glowTimings, 1)); 
+    geometry.setAttribute('colorIndex', new THREE.InstancedBufferAttribute(colorIndices, 1));
+    geometry.setAttribute('glowTiming', new THREE.InstancedBufferAttribute(glowTimings, 1)); 
 
-    if (animationParams.frame >= 2160) {
-        const fixedRotation = new Float32Array(AMOUNT * 4);
-        for (let i = 0; i < AMOUNT; i++) {
-            fixedRotation[i * 4 + 0] = Math.PI / 2;
-            fixedRotation[i * 4 + 1] = 0;
-            fixedRotation[i * 4 + 2] = 0;
-            fixedRotation[i * 4 + 3] = Math.random();
-        }
-        const fixedRotationTexture = new THREE.DataTexture(fixedRotation, TEXTURE_WIDTH, TEXTURE_HEIGHT, THREE.RGBAFormat, THREE.FloatType);
-        fixedRotationTexture.needsUpdate = true;
-        fixedRotationTexture.generateMipmaps = false;
-        fixedRotationTexture.flipY = false;
-        mesh.material.uniforms.textureRotation.value = fixedRotationTexture;
-
-        const butterflyVertexShader = `
-        uniform sampler2D texturePosition;
-        uniform sampler2D textureRotation;
-        uniform sampler2D textureScale;
-        uniform vec2 resolution;
-        uniform float time;
-        uniform vec3 meshPosition;
-        attribute float colorIndex;
-        attribute float glowTiming;
-        varying float vColorIndex;
-        varying vec3 vNormal;
-        varying vec3 vPosition;
-        varying float vGlowTiming;
-        
-        mat3 rotationMatrix(vec3 rotation) {
-            float cosX = cos(rotation.x);
-            float sinX = sin(rotation.x);
-            float cosY = cos(rotation.y);
-            float sinY = sin(rotation.y);
-            float cosZ = cos(rotation.z);
-            float sinZ = sin(rotation.z);
-        
-            mat3 rotX = mat3(
-                1.0, 0.0, 0.0,
-                0.0, cosX, -sinX,
-                0.0, sinX, cosX
-            );
-        
-            mat3 rotY = mat3(
-                cosY, 0.0, sinY,
-                0.0, 1.0, 0.0,
-                -sinY, 0.0, cosY
-            );
-        
-            mat3 rotZ = mat3(
-                cosZ, -sinZ, 0.0,
-                sinZ, cosZ, 0.0,
-                0.0, 0.0, 1.0
-            );
-        
-            return rotZ * rotY * rotX;
-        }
-        
-        mat3 lookAt(vec3 direction, vec3 up) {
-            vec3 z = normalize(direction);
-            vec3 x = normalize(cross(up, z));
-            vec3 y = cross(z, x);
-        
-            return mat3(x, y, z);
-        }
-        
-        void main() {
-            vColorIndex = colorIndex;
-            vGlowTiming = glowTiming;
-        
-            vNormal = normalize(normalMatrix * normal);
-        
-            vec2 uv = vec2(gl_InstanceID % int(resolution.x), gl_InstanceID / int(resolution.x)) / resolution;
-            vec4 positionInfo = texture2D(texturePosition, uv);
-            vec3 positionOffset = positionInfo.xyz;
-            vec3 rotationAngles = texture2D(textureRotation, uv).xyz;
-            float baseScale = texture2D(textureScale, uv).r;
-        
-            float life = positionInfo.a;
-            float scale = baseScale * smoothstep(0.0, 0.5, life);
-        
-            vec3 rotatedPosition;
-            vec3 direction = normalize(meshPosition - positionOffset);
-            vec3 up = vec3(0.0, 1.0, 0.0);
-            if (rotationAngles.x == ${Math.PI / 2}) { 
-                mat3 lookAtMatrix = lookAt(direction, up);
-                rotatedPosition = lookAtMatrix * (position * scale);
-            } else {
-                vec3 timeRotation = rotationAngles + time * vec3(0.1, 0.2, 0.3);
-                mat3 rotationMat = rotationMatrix(timeRotation);
-                rotatedPosition = rotationMat * position * scale;
-            }
-        
-            vec3 transformedPosition = rotatedPosition + positionOffset;
-        
-            vPosition = (modelViewMatrix * vec4(transformedPosition, 1.0)).xyz;
-            vec4 mvPosition = modelViewMatrix * vec4(transformedPosition, 1.0);
-            gl_Position = projectionMatrix * mvPosition;
-        }
-        `;
-        mesh.material.vertexShader = butterflyVertexShader;
-        mesh.material.needsUpdate = true;
-    }
-    
+    mesh.position.y += yPos;
     return mesh;
 }
 
@@ -870,7 +683,7 @@ function updateParticleMesh(model) {
     }
     particleMesh = createParticleMesh(model);
     scene.add(particleMesh);
-    initGlowMesh()
+    initGlowMesh();
 }
 
 function updateParticles(dt) {
@@ -929,9 +742,9 @@ function initGlowMesh() {
     glowMesh = new THREE.InstancedMesh(sphereGeometry, sphereMaterial, AMOUNT);
     glowMesh.scale.set(settings.wholeScale, settings.wholeScale, settings.wholeScale)
     glowMesh.renderOrder = 1;
-    if (animationParams.isPlaying) {
+    glowMesh.position.y += yPos;
+
     scene.add(glowMesh);
-    }
 }
 
 function animate() {
@@ -946,13 +759,14 @@ function render(timestamp, frame) {
     time = newTime;
 
     initAnimation = Math.min(initAnimation + dt * 0.00025, 1);
-    // if (animationParams.isPlaying && animationParams.frame < maxFrame) {
     updateSimulator(dt);
     updateParticles(dt);
-    // }
+
+    if (isPlaying) {
+        animationFrame();
+    }
 
     if ( frame ) {
-
         const referenceSpace = renderer.xr.getReferenceSpace();
         const session = renderer.xr.getSession();
         if ( hitTestSourceRequested === false ) {
@@ -983,7 +797,6 @@ function render(timestamp, frame) {
     //     particleMesh.position.copy(lastValidPosition);
     //     glowMesh.position.copy(lastValidPosition);
     // }
-
     scene.traverse( function( object ) {
         object.frustumCulled = false;
     } );
@@ -991,376 +804,138 @@ function render(timestamp, frame) {
 }
 
 //##########frame animation############
-function frameAnimation() {
-    if (animationParams.isPlaying && animationParams.frame < maxFrame) {
-        requestAnimationFrame(frameAnimation);
-    }
-    const now = performance.now();
-    const deltaTime = now - lastTime;
-
-    if (deltaTime >= interval) {
-        animationParams.frame += 1;
-        frameCount += 1;
-        lastTime = now - (deltaTime % interval);
-
-        currentAngle = animationParams.frame * angleIncrementPerFrame;
-        vinyl.style.transform = `translateX(-50%) rotate(${currentAngle}deg)`;
+function animationFrame() {
+    if (settings.parOpacity <= 1) {
+            settings.parOpacity += 0.01
     }
 
-    if (animationParams.isPlaying && animationParams.frame === 2880) {
-        animationParams.isPlaying = false;
-    }
-
-    if (window.innerWidth > 640) {
-    checkAndLoadScene(animationParams.frame);
-    }
-    checkAndLoadParticleMesh(animationParams.frame);
-
-    if (animationParams.frame < 720) {
-
-        //simul
-        if (settings.speed < 0.5) {
-            settings.speed += 0.002;
-        } else if (settings.speed > 0.5) {
-            settings.speed -= 0.002;
+    if (speedFlag) {
+        settings.speed += 0.0005;
+        if (settings.speed >= 0.75) {
+            settings.speed = 0.75;
+            speedFlag = false;
         }
-        settings.dieSpeed = 0.001;
-        if (settings.radius < 1.5) {
-            settings.radius += 0.01;
-        } else if (settings.radius > 1.5) {
-            settings.radius -= 0.01;
-        }
-        settings.curlSize = 0.015;
-        settings.attraction = -2.0;
-        settings.tornadoStrength = 2.0;
-        if (settings.circleRadius < 600) {
-            settings.circleRadius += 1;
-        } else if (settings.circleRadius > 600) {
-            settings.circleRadius -= 1;
-        }
-        settings.circleHeight = 25;
-
-        //color
-        // settings.lightIntensity = 0.7;
-        // settings.glowIntensity = 0.2;
-        // settings.metalness = 0.3;
-        // settings.roughness = 1.0;
-        settings.color1 = '#cfd945';
-        settings.color2 = '#448717';
-        
-        //scale
-        settings.currentModel = 'Petal';
-        settings.currentScene = 'scene1';
-        if(settings.scaleFactor != 0.4) {
-            settings.scaleFactor = 0.4;
-            updateScaleTexture();
-        }
-        settings.varScaleFactor = 0.6;
-        // settings.wholeScale = 0.006;
-
-        //glow
-        settings.falloff = 0.0;
-        settings.glowInternalRadius = 0.0;
-        settings.glowColor = '#66ff00';
-        settings.glowSharpness = 0.0;
-
-        if (predictScene != 'scene1' || isSkipped) {
-            isSkipped = false;
-            if (settings.opacity <= 0.008) {
-                settings.opacity += 0.0001;
-            } else if (settings.opacity >= 0.008) {
-                settings.opacity -= 0.0001;
-            }
-            if (settings.parOpacity <= 1.0) {
-                settings.parOpacity += 0.002;
-            }
-            if (settings.opacity >= 0.008 && settings.opacity <= 0.0081 && settings.parOpacity >= 1.0) {
-                isSkipped = false;
-                predictScene = 'scene1';
-            }
-        }
-
-        if (animationParams.frame > 600 ) {
-            if (settings.parOpacity >= 0.0) {
-                settings.parOpacity -= 0.005;
-            }
-            if (settings.opacity >= 0.0) {
-                settings.opacity -= 0.0001;
-            }
-            
-        }
-        if (animationParams.frame === 700) {
-            fromScene1 = true;
-        }
-    }
-    if (animationParams.frame >= 720 && animationParams.frame < 1440) {
-
-        //simul
-        if (settings.speed < 0.05) {
-            settings.speed += 0.002;
-        } else if (settings.speed > 0.05) {
-            settings.speed -= 0.002;
-        }
-        settings.dieSpeed = 0.001;
-        if (settings.radius < 10.0) {
-            settings.radius += 0.01;
-        }
-        settings.curlSize = 0.015;
-        settings.attraction = -2.0;
-        settings.tornadoStrength = 3.0;
-        if(fromScene1 && animationParams.frame === 720) {
-            settings.circleRadius = 1000;
-            fromScene1 = false;
-        }
-        if (settings.circleRadius < 800) {
-            settings.circleRadius += 1;
-        } else if (settings.circleRadius > 800) {
-            settings.circleRadius -= 0.1;
-        }
-        settings.circleHeight = 25;
-
-        //color
-        // settings.lightIntensity = 0.7;
-        // settings.glowIntensity = 0.2;
-        // settings.metalness = 0.3;
-        // settings.roughness = 1.0;
-        settings.color1 = '#f8c75d';
-        settings.color2 = '#ebd6f5';
-        
-        //scale
-        settings.currentModel = 'Petal';
-        settings.currentScene = 'scene2';
-        if(settings.scaleFactor != 0.3) {
-            settings.scaleFactor = 0.3;
-            updateScaleTexture();
-        }
-        settings.varScaleFactor = 0.6;
-        // settings.wholeScale = 0.006;
-
-        //glow
-        settings.falloff = 0.0;
-        settings.glowInternalRadius = 0.0;
-        settings.glowColor = '#ff7b00';
-        settings.glowSharpness = 0.0;
-
-        if (predictScene != 'scene2' || isSkipped) {
-            isSkipped = false;
-            if (settings.opacity <= 0.012) {
-                settings.opacity += 0.0001;
-            } else if (settings.opacity >= 0.012) {
-                settings.opacity -= 0.0001;
-            }
-            if (settings.parOpacity <= 1.0) {
-                settings.parOpacity += 0.002;
-            } 
-            if (settings.opacity >= 0.012 && settings.opacity <= 0.0013 && settings.parOpacity >= 1.0) {
-                isSkipped = false;
-                predictScene = 'scene2';
-            }
-        }
-
-        if (animationParams.frame > 1320 ) {
-            if (settings.parOpacity >= 0.0) {
-                settings.parOpacity -= 0.005;
-            }
-            if (settings.opacity >= 0.0) {
-                settings.opacity -= 0.0001;
-            }
-        }
-    }
-    if (animationParams.frame >= 1440 && animationParams.frame < 2160) {
-
-        //simul
-        if (settings.speed < 0.8) {
-            settings.speed += 0.002;
-        } else if (settings.speed > 0.8) {
-            settings.speed -= 0.002;
-        }
-        settings.dieSpeed = 0.001;
-        if (settings.radius < 1.5) {
-            settings.radius += 0.02;
-        } else if (settings.radius > 1.5) {
-            settings.radius -= 0.02;
-        }
-        settings.curlSize = 0.015;
-        settings.attraction = -2.0;
-        settings.tornadoStrength = 3.0;
-        if (settings.circleRadius < 550) {
-            settings.circleRadius += 1;
-        } else if (settings.circleRadius > 550) {
-            settings.circleRadius -= 1;
-        }
-        settings.circleHeight = 25;
-
-        //color
-        // settings.lightIntensity = 1.0;
-        // settings.glowIntensity = 0.2;
-        // settings.metalness = 0.3;
-        // settings.roughness = 1.0;
-        settings.color1 = '#bb00ff';
-        settings.color2 = '#f5d6eb';
-        
-        //scale
-        settings.currentModel = 'flower';
-        settings.currentScene = 'scene3';
-        if(settings.scaleFactor != 2.0) {
-            settings.scaleFactor = 2.0;
-            updateScaleTexture();
-        }
-        settings.varScaleFactor = 0.6;
-        // settings.wholeScale = 0.006;
-
-        //glow
-        settings.falloff = 0.0;
-        settings.glowInternalRadius = 0.0;
-        settings.glowColor = '#d400ff';
-        settings.glowSharpness = 0.0;
-
-        if (predictScene != 'scene3' || isSkipped) {
-            isSkipped = false;
-            if (settings.opacity <= 0.02) {
-                settings.opacity += 0.0001;
-            } else if (settings.opacity >= 0.02) {
-                settings.opacity -= 0.0001;
-            }
-            if (settings.parOpacity <= 1.0) {
-                settings.parOpacity += 0.002;
-            }
-            if (settings.opacity >= 0.02 && settings.opacity <= 0.021 && settings.parOpacity >= 1.0) {
-                isSkipped = false;
-                predictScene = 'scene3';
-            }
-        }
-
-        if (animationParams.frame > 2040 ) {
-            if (settings.parOpacity > 0.0) {
-                settings.parOpacity -= 0.005;
-            }
-            if (settings.opacity >= 0.0) {
-                settings.opacity -= 0.0001;
-            }
+    } else {
+        settings.speed -= 0.0005;
+        if (settings.speed <= 0.25) {
+            settings.speed = 0.25;
+            speedFlag = true;
         }
     }
 
-    if (animationParams.frame >= 2160) {
-
-        //simul
-        if (settings.speed < 0.75) {
-            settings.speed += 0.002;
-        } else if (settings.speed > 0.75) {
-            settings.speed -= 0.002;
+    if (dieSpeedFlag) {
+        settings.dieSpeed -= 0.0001;
+        if (settings.dieSpeed <= 0.001) {
+            settings.dieSpeed = 0.001;
+            dieSpeedFlag = false;
         }
-
-        if (settings.dieSpeed >= 0.004) {
-            settings.dieSpeed -= 0.0002
-        } else if (settings.dieSpeed <= 0.004) {
-            settings.dieSpeed += 0.0002
-        }
-        if (settings.radius < 0.75) {
-            settings.radius += 0.02;
-        } else if (settings.radius > 0.75) {
-            settings.radius -= 0.02;
-        }
-        settings.curlSize = 0.015;
-        settings.attraction = -3.0;
-        settings.tornadoStrength = 3.3;
-        if (settings.circleRadius < 600) {
-            settings.circleRadius += 1;
-        } else if (settings.circleRadius > 600) {
-            settings.circleRadius -= 1;
-        }
-        settings.circleHeight = 25;
-
-        //color
-        // settings.lightIntensity = 1.0;
-        // settings.glowIntensity = 0.2;
-        // settings.metalness = 0.3;
-        // settings.roughness = 1.0;
-        settings.color1 = '#fbff00';
-        settings.color2 = '#f5d6eb';
-        
-        //scale
-        settings.currentModel = 'butterfly';
-        settings.currentScene = 'scene4';
-        if(settings.scaleFactor != 0.3) {
-            settings.scaleFactor = 0.3;
-            updateScaleTexture();
-        }
-        settings.varScaleFactor = 0.6;
-        // settings.wholeScale = 0.006;
-
-        //glow
-        settings.falloff = 0.0;
-        settings.glowInternalRadius = 0.0;
-        settings.glowColor = '#ffa200';
-        settings.glowSharpness = 0.0;
-
-        if (predictScene != 'scene4' || isSkipped) {
-            if (settings.opacity <= 0.06) {
-                settings.opacity += 0.0001;
-            } else if (settings.opacity >= 0.06) {
-                settings.opacity -= 0.0001;
-            }
-            if (settings.parOpacity <= 1.0) {
-                settings.parOpacity += 0.002;
-            }
-            if (settings.opacity >= 0.06 && settings.opacity <= 0.061 && settings.parOpacity >= 1.0) {
-                isSkipped = false;
-                predictScene = 'scene4';
-            }
-        }
-
-        if (animationParams.frame > 2760 ) {
-            if (settings.parOpacity > 0.0) {
-                settings.parOpacity -= 0.005;
-            }
-            if (settings.opacity >= 0.0) {
-                settings.opacity -= 0.001;
-            }
+    } else {
+        settings.dieSpeed += 0.000001;
+        if (settings.dieSpeed >= 0.003) {
+            settings.dieSpeed = 0.003;
+            dieSpeedFlag = true;
         }
     }
+
+    if (radiusFlag) {
+        settings.radius += 0.005;
+        if (settings.radius >= 4.0) {
+            settings.radius = 4.0;
+            radiusFlag = false;
+        }
+    } else {
+        settings.radius -= 0.005;
+        if (settings.radius <= 1.0) {
+            settings.radius = 1.0;
+            radiusFlag = true;
+        }
+    }
+
+    if (opacityFlag) {
+        settings.opacity += 0.00025;
+        if (settings.opacity >= 0.04) {
+            settings.opacity = 0.04;
+            opacityFlag = false;
+        }
+    } else {
+        settings.opacity -= 0.00025;
+        if (settings.opacity <= 0.02) {
+            settings.opacity = 0.02;
+            opacityFlag = true;
+        }
+    }
+
+    if (circleRadiusFlag) {
+        settings.circleRadius += 1;
+        if (settings.circleRadius >= 900) {
+            settings.circleRadius = 900;
+            circleRadiusFlag = false;
+        }
+    } else {
+        settings.circleRadius -= 1;
+        if (settings.circleRadius <= 300) {
+            settings.circleRadius = 300;
+            circleRadiusFlag = true;
+        }
+    }
+
+    if (lightFlag) {
+        settings.lightIntensity += 0.001;
+        if (settings.lightIntensity >= 1.4) {
+            settings.lightIntensity = 1.4;
+            lightFlag = false;
+        }
+    } else {
+        settings.lightIntensity -= 0.001;
+        if (settings.lightIntensity <= 0.7) {
+            settings.lightIntensity = 0.7;
+            lightFlag = true;
+        }
+    }
+
+    if (colorFlag) {
+        colorFactor += 0.002;
+        if (colorFactor >= 1.0) {
+            colorFactor = 1.0;
+            colorFlag = false;
+        }
+    } else {
+        colorFactor -= 0.002;
+        if (colorFactor <= 0.0) {
+            colorFactor = 0.0;
+            colorFlag = true;
+        }
+    }
+
+    settings.color1 = interpolateColor('#ffde38', '#a7f547', colorFactor);
+    settings.color2 = interpolateColor('#dc2eff', '#f514cc', colorFactor);
+    settings.glowColor = interpolateColor('#7300ff', '#ffa200', colorFactor);
 }
 
-function logFPS() {
-    console.log(`${frameCount} fps`);
-    log.innerHTML = `${frameCount} fps`;
-
-    frameCount = 0; 
-}
 
 function playAnimation() {
-    if (!animationParams.isPlaying) {
-        animationParams.isPlaying = true;
-        lastTime = performance.now();
-        if(!particleMesh && !glowMesh) {
-            scene.add(particleMesh);
-            scene.add(glowMesh);
-        }
-        frameAnimation();
+    if (!isPlaying) {
+        isPlaying = true;
+        
+        updateParticleMesh(models[1])
 
         if (window.innerWidth > 640) {
-        video.play();
+            video.play();
         }
     }
 }
 
 function stopAnimation() {
-    animationParams.isPlaying = false;
+    isPlaying = false;
     if (window.innerWidth > 640) {
         video.pause();
     }
-    isSkipped = true;
-    // settings.speed = 0;
-    // settings.dieSpeed = 0;
-    // settings.tornadoStrength = 0;
 }
 
 function resetAnimation() {
-    animationParams.isPlaying = false;
-    animationParams.frame = 0;
-    currentSceneLoaded = '';
+    isPlaying = false;
     if (window.innerWidth > 640) {
-        video.currentTime = 0 / fps;
+        video.currentTime = 0 / 24;
         video.pause();
     }
     if (particleMesh && glowMesh) {
@@ -1371,75 +946,37 @@ function resetAnimation() {
     settings.opacity = 0;
 }
 
-function skipToFrame(frame) {
-    isSkipped = true;
-    animationParams.frame = frame;
-
-    if (window.innerWidth > 640) {
-    checkAndLoadScene(frame);
+function hexToRgb(hex) {
+    hex = hex.replace(/^#/, '');
+    if (hex.length === 3) {
+        hex = hex.split('').map(char => char + char).join('');
     }
-
-    checkAndLoadParticleMesh(frame);
-    playAnimation();
-
-    if (window.innerWidth > 640) {
-        video.currentTime = frame / fps;
-        video.play();
-    }
+    const num = parseInt(hex, 16);
+    return {
+        r: (num >> 16) & 255,
+        g: (num >> 8) & 255,
+        b: num & 255
+    };
 }
 
-function checkAndLoadScene(frame) {
-    let sceneToLoad = '';
-    if (frame >= 0 && frame < 720) {
-        sceneToLoad = 'scene1';
-    } else if (frame >= 720 && frame < 1440) {
-        sceneToLoad = 'scene2';
-    } else if (frame >= 1440 && frame < 2160) {
-        sceneToLoad = 'scene3';
-    } else if (frame >= 2160 && frame < 2880) {
-        sceneToLoad = 'scene4';
-    }
-
-    if (sceneToLoad && sceneToLoad !== currentSceneLoaded) {
-        loadGLBScene(sceneToLoad);
-        currentSceneLoaded = sceneToLoad;
-    }
+function rgbToHex(r, g, b) {
+    const toHex = n => n.toString(16).padStart(2, '0');
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 
-function checkAndLoadParticleMesh(frame) {
-    let meshToLoad = '';
-    if (frame >= 0 && frame < 720) {
-        meshToLoad = 'Petal';
-    } else if (frame >= 720 && frame < 1440) {
-        meshToLoad = 'Petal';
-    } else if (frame >= 1440 && frame < 2160) {
-        meshToLoad = 'flower';
-    } else if (frame >= 2160 && frame < 2880) {
-        meshToLoad = 'butterfly';
-    }
-
-    if (meshToLoad && meshToLoad !== currentParticleMesh) {
-        loadParticleMesh(meshToLoad);
-        currentParticleMesh = meshToLoad;
-    }
+function interpolateColor(color1, color2, factor) {
+    const rgb1 = hexToRgb(color1);
+    const rgb2 = hexToRgb(color2);
+    
+    const r = Math.round(rgb1.r + factor * (rgb2.r - rgb1.r));
+    const g = Math.round(rgb1.g + factor * (rgb2.g - rgb1.g));
+    const b = Math.round(rgb1.b + factor * (rgb2.b - rgb1.b));
+    
+    return rgbToHex(r, g, b);
 }
 
-function loadParticleMesh(modelName) {
-    const modelIndex = modelNames.indexOf(modelName);
-    console.log(modelIndex)
-    if (modelIndex !== -1) {
-        updateParticleMesh(models[modelIndex]);
-    }
-}
 
 //#########EVENT LISTENER#############
-function onKeyUp(evt) {
-    if(evt.keyCode === 32) {
-        settings.speed = settings.speed === 0 ? 0.05 : 0;
-        settings.dieSpeed = settings.dieSpeed === 0 ? 0.003 : 0;
-    }
-}
-
 function onWindowResize() {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
@@ -1487,20 +1024,13 @@ renderer.xr.addEventListener( 'sessionend', function ( event ) {
     console.log('offAR')
 } );
 
-function loadGLBScene(modelName) {
-    const modelPaths = {
-        'scene1': './src/models/scene1.glb',
-        'scene2': './src/models/scene2.glb',
-        'scene3': './src/models/scene3.glb',
-        'scene4': './src/models/scene4.glb'
-    };
-
+function loadGLBScene(sceneName) {
     // Clear existing models
     if (glbModel) {
         scene.remove(glbModel);
     }
 
-    loader.load(modelPaths[modelName], function (gltf) {
+    loader.load(scenePaths[sceneName], function (gltf) {
         glbModel = gltf.scene;
         let scaleFactor = 1;
         glbModel.position.y = -0.5;
@@ -1515,9 +1045,7 @@ function initGUI() {
 
     const animationFolder = gui.addFolder( 'animation' );
 
-    const skipFolder = gui.addFolder( 'skip' );
-    // const presetFolder = gui.addFolder('Presets');
-    // const saveFolder = gui.addFolder('Save Presets');
+    const sceneFolder = gui.addFolder( 'scene' );
     const amountFolder = gui.addFolder( 'amount' );
     const simulFolder = gui.addFolder( 'simul' );
     const modelFolder = gui.addFolder( 'model' );
@@ -1525,37 +1053,14 @@ function initGUI() {
     const scaleFolder = gui.addFolder( 'scale' );
     const glowFolder = gui.addFolder( 'glow' );
 
-    animationFolder.add( animationParams, 'frame', 1, 2880, 1 )
-    .listen()
-    .onChange( function() {
-        updateScaleTexture();
-
-        if (window.innerWidth > 640) {
-        checkAndLoadScene(animationParams.frame);
-        }
-
-        checkAndLoadParticleMesh(animationParams.frame);
-        console.log(settings.scaleFactor)
-    });
     animationFolder.add({ play: playAnimation }, 'play').name('Play');
     animationFolder.add({ stop: stopAnimation }, 'stop').name('Stop');
     animationFolder.add({ reset: resetAnimation }, 'reset').name('Reset');
     
-    skipFolder.add({ skipToScene1: () => skipToFrame(0) }, 'skipToScene1').name('Skip to Scene 1');
-    skipFolder.add({ skipToScene2: () => skipToFrame(720) }, 'skipToScene2').name('Skip to Scene 2');
-    skipFolder.add({ skipToScene3: () => skipToFrame(1440) }, 'skipToScene3').name('Skip to Scene 3');
-    skipFolder.add({ skipToScene4: () => skipToFrame(2160) }, 'skipToScene4').name('Skip to Scene 4');
-
-
-    // presetFolder.add({ preset1: () => loadPreset('scene1') }, 'preset1').name('Load scene1');
-    // presetFolder.add({ preset2: () => loadPreset('scene2') }, 'preset2').name('Load scene2');
-    // presetFolder.add({ preset3: () => loadPreset('scene3') }, 'preset3').name('Load scene3');
-    // presetFolder.add({ preset4: () => loadPreset('scene4') }, 'preset4').name('Load scene4');
-
-    // saveFolder.add({ savePreset1: () => savePreset('scene1') }, 'savePreset1').name('Save scene1');
-    // saveFolder.add({ savePreset2: () => savePreset('scene2') }, 'savePreset2').name('Save scene2');
-    // saveFolder.add({ savePreset3: () => savePreset('scene3') }, 'savePreset3').name('Save scene3');
-    // saveFolder.add({ savePreset4: () => savePreset('scene4') }, 'savePreset4').name('Save scene4');
+    sceneFolder.add({ Scene1: () => loadGLBScene('scene1') }, 'Scene1').name('Scene 1');
+    sceneFolder.add({ Scene2: () => loadGLBScene('scene2') }, 'Scene2').name('Scene 2');
+    sceneFolder.add({ Scene3: () => loadGLBScene('scene3') }, 'Scene3').name('Scene 3');
+    sceneFolder.add({ Scene4: () => loadGLBScene('scene4') }, 'Scene4').name('Scene 4');
 
     amountFolder.add( settings, 'textureWidth', 1, 64, 1)
     .listen()
@@ -1621,99 +1126,8 @@ function initGUI() {
     gui.close();
 }
 
-function initGUIforAR() {
-    gui = new GUI( { container: overlay } );
-
-    const animationFolder = gui.addFolder( 'animation' );
-    const modelFolder = gui.addFolder( 'model' );
-    const colorFolder = gui.addFolder( 'color' );
-    const scaleFolder = gui.addFolder( 'scale' );
-    const glowFolder = gui.addFolder( 'glow' );
-
-    animationFolder.add( animationParams, 'frame', 1, 2880, 1 )
-    .listen()
-    .onChange( function() {
-        updateScaleTexture();
-
-        if (window.innerWidth > 640) {
-        checkAndLoadScene(animationParams.frame);
-        }
-
-        checkAndLoadParticleMesh(animationParams.frame);
-        console.log(settings.scaleFactor)
-    });
-    animationFolder.add({ play: playAnimation }, 'play').name('Play');
-    animationFolder.add({ stop: stopAnimation }, 'stop').name('Stop');
-    animationFolder.add({ reset: resetAnimation }, 'reset').name('Reset');
-    
-    colorFolder.add( settings, 'lightIntensity', 0.0, 5.0 ).listen();
-    colorFolder.add( settings, 'glowIntensity', 0.0, 1.0 ).listen();
-    colorFolder.add( settings, 'metalness', 0.0, 1.0 ).listen();
-    colorFolder.add( settings, 'roughness', 0.0, 1.0 ).listen();
-    colorFolder.addColor( settings, 'color1' ).listen();
-    colorFolder.addColor( settings, 'color2' ).listen();
-    colorFolder.add( settings, 'parOpacity', 0.0, 1.0 ).listen();
-
-    modelFolder.add(settings, 'currentModel', modelNames).name('Model')
-    .listen()
-    .onChange(function(value) {
-        const modelIndex = modelNames.indexOf(value);
-        updateParticleMesh(models[modelIndex]);
-    });
-
-    scaleFolder.add(settings, 'scaleFactor', 0, 20).name('Scale Factor')
-    .listen()
-    .onChange(function(value) {
-        updateScaleTexture();
-    });
-    scaleFolder.add(settings, 'varScaleFactor', 0, 1).name('Var Scale Factor')
-    .listen()
-    .onChange(function(value) {
-        updateScaleTexture();
-    });
-    scaleFolder.add( settings, 'wholeScale', 0.0, 10.0 ).listen();
-
-    glowFolder.add( settings, 'opacity', 0, 1).listen();
-
-    gui.close();
-}
-
-function loadPreset(presetName) {
-    const preset = presets[presetName];
-    if (preset) {
-        if (presetName === 'scene1') {
-            playAnimation();
-            animationParams.frame = 0;
-        } else if (presetName === 'scene2') {
-            playAnimation();
-            animationParams.frame = 720;
-        } else if (presetName === 'scene3') {
-            playAnimation();
-            animationParams.frame = 1440;
-        } else if (presetName === 'scene4') {
-            playAnimation();
-            animationParams.frame = 2160;
-        }
-
-        Object.assign(settings, preset);
-        updateGUI();
-        updateTexture();
-        // loadGLBScene(settings.currentScene);
-        const modelIndex = modelNames.indexOf(settings.currentModel);
-        updateParticleMesh(models[modelIndex]);
-    }
-}
-
-function savePreset(presetName) {
-    presets[presetName] = { ...settings };
-}
-
-function updateGUI() {
-    gui.controllersRecursive().forEach(controller => controller.updateDisplay());
-}
 
 let isUIdisplayed = true;
-let isPosfixed = false;
 
 function createButton( renderer, sessionInit = {} ) {
 
@@ -1746,73 +1160,21 @@ function createButton( renderer, sessionInit = {} ) {
                 onSelect();
             } );
 
-            const skipScene = document.createElement("div");
-            skipScene.id = "skipScene";
-            
-            const scene1 = document.createElement('div');
-            const scene2 = document.createElement('div');
-            const scene3 = document.createElement('div');
-            const scene4 = document.createElement('div');
-            scene1.id = 'scene1';
-            scene1.className = 'scene';
-            scene2.id = 'scene1';
-            scene2.className = 'scene';
-            scene3.id = 'scene1';
-            scene3.className = 'scene';
-            scene4.id = 'scene1';
-            scene4.className = 'scene';
-
             const hideUI = document.createElement("div");
             hideUI.id = "hideUI";
 
             hideUI.addEventListener( 'click', function () {
                 if (isUIdisplayed) {
                     fixParticlePos.style.display = 'none';
-                    skipScene.style.display = 'none';
-                    vinyl.style.display = 'none';
                     isUIdisplayed = false;
                 } else {
                     fixParticlePos.style.display = 'block';
-                    skipScene.style.display = 'flex';
-                    vinyl.style.display = 'block';
                     isUIdisplayed = true;
                 }
             } );
 
-            scene1.addEventListener( 'click', function () {
-                if (isPosfixed) {
-                    skipToFrame(0);
-                }
-            } );
-            scene2.addEventListener( 'click', function () {
-                if (isPosfixed) {
-                    skipToFrame(720);
-                }
-            } );
-            scene3.addEventListener( 'click', function () {
-                if (isPosfixed) {
-                    skipToFrame(1440);
-                }
-            } );
-            scene4.addEventListener( 'click', function () {
-                if (isPosfixed) {
-                    skipToFrame(2160);
-                }
-            } );
-
-
-            skipScene.appendChild(scene1);
-            skipScene.appendChild(scene2);
-            skipScene.appendChild(scene3);
-            skipScene.appendChild(scene4);
-
             overlay.appendChild(fixParticlePos);
-            // overlay.appendChild(skipScene);
             overlay.appendChild(hideUI);
-            overlay.appendChild(log)
-            overlay.appendChild( vinyl );
-            overlay.appendChild( thumbnailVideo );
-            overlay.appendChild( thumbnailBack );
 
             overlay.appendChild( svg );
 
