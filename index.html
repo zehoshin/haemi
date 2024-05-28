@@ -4,34 +4,38 @@
 		<title>haemi</title>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:ital,wght@0,100..900;1,100..900&family=Noto+Sans+KR:wght@100..900&display=swap" rel="stylesheet">
 		<style>
-			@media all and ( max-width: 640px ) {
-				#hideUI {
-					position: absolute;
-					width: 75px;
-					height: 75px;
-					border-radius: 50%;
-					background-color: rgb(200, 200, 200);
-					bottom: 300px;
-					right: 30px;
-					z-index: 9999;
-				}
-				#fixParticlePos {
-					position: absolute;
-					width: 75px;
-					height: 75px;
-					border-radius: 50%;
-					background-color: rgb(100, 100, 100);
-					bottom: 200px;
-					right: 30px;
-					z-index: 9999;
-				}
+			#hideUI {
+				position: absolute;
+				width: 75px;
+				height: 75px;
+				border-radius: 50%;
+				background-color: rgb(200, 200, 200);
+				bottom: 300px;
+				right: 30px;
+				z-index: 9999;
 			}
+
+			#fixParticlePos {
+				position: absolute;
+				width: 75px;
+				height: 75px;
+				border-radius: 50%;
+				background-color: rgb(100, 100, 100);
+				bottom: 200px;
+				right: 30px;
+				z-index: 9999;
+			}
+		
 			body {
 				margin: 0;
 				overflow: hidden;
 				background-color: black;
 			}
+
 			canvas {
 				position: absolute;
 				top: 0;
@@ -39,14 +43,139 @@
 				width: 100dvw;
 				height: 100dvh;
 			}
+
+			.kor {
+				color: white;
+				font-family: "Noto Sans KR", sans-serif;
+				font-weight: 600;
+				text-align: center;
+				word-break: keep-all;
+			}
+
+			.eng {
+				color: white;
+				opacity: 0.66;
+				font-family: "Libre Franklin", sans-serif;
+				text-align: center;
+			}
+
+			.h1_kor {
+				font-size: 36px;
+				font-weight: 600;
+			}
+
+			.h1_eng {
+				font-size: 28px;
+				font-weight: 600;
+			}
+
+			.h2_kor {
+				font-size: 18px;
+				margin-bottom: 7px;
+				font-weight: 500;
+			}
+
+			.h2_eng {
+				font-size: 14px;
+				font-weight: 500;
+			}
+
+			.cap_kor {
+				font-size: 14px;
+				text-align: left;
+				width: 105px;
+			}
+
+			.cap_eng {
+				font-size: 14px;
+				text-align: left;
+				width: 105px;
+			}
+
+			.title_text {
+				position: absolute;
+				top: 50%;
+				left: 50%;
+				transform: translate(-50%, -50%);
+				mix-blend-mode: difference;
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+			}
+
+			.row {
+				width: 265px;
+				margin-bottom: 30px;
+			}
+
+			#forButton{
+				margin-top: 50px;
+			}
+
+			.blur {
+				position: absolute;
+				width: 150px;
+				height: 60px;
+				background-color: #d000ff;
+				border-radius: 30px;
+				filter: blur(50px);
+				left: 50%;
+				transform: translateX(-50%);
+			}
+
+			.col {
+				width: 90%;
+				display: flex;
+				position: absolute;
+				bottom: 30px;
+				left: 50%;
+				transform: translateX(-50%);
+				justify-content: space-between;
+			}
+
+			.col_width {
+				width: 50%;
+			}
+
 		</style>
 	</head>
 	<body>
-		<div id="forCanvas"></div>
-		<div id="backGround"></div>
 		<!-- <div id="hideUI"></div>
 		<div id="fixParticlePos"></div> -->
-
+		<div id="forCanvas"></div>
+		<div class="title_text">
+			<div class="row">
+				<div class="h1_kor kor">
+					야생화
+				</div>
+				<div class="h1_eng eng">
+					Wild Flower
+				</div>
+			</div>
+			<div class="row">
+				<div class="h2_kor kor">
+					작게 피어나는 야생화와 들판을 보며 안식의 시간을 느껴보세요.
+				</div>
+				<div class="h2_eng eng">
+					Take a moment to feel the tranquility of the blooming wildflowers.
+				</div>
+			</div>
+			<div id="forButton">
+				<div class="blur"></div>
+			</div>
+		</div>
+		<div class="col">
+			<div class="col_width">
+				<div class="cap_eng eng">
+					Haemi Sanctuarium Internationale Media Art
+				</div>
+			</div>
+			<div class="col_width">
+				<div class="cap_kor kor">
+					해미국제성지 미디어 아트
+				</div>
+			</div>
+		</div>
 		<script type="importmap">
 			{
 				"imports": {

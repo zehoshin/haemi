@@ -271,8 +271,8 @@ function init() {
     }
 
     camera = new THREE.PerspectiveCamera( 90, window.innerWidth / window.innerHeight, 0.1, 10000);
-    camera.position.set( -0.7797542428085145, 6.072004978334489, 5.619455596230064 );
-    camera.rotation.set( -0.9380921340515062, -0.13426529909466958, -0.18056813054902943 );
+    camera.position.set( 0.6865024336032471, 6.012524566357743, -0.8411735019088319 );
+    camera.rotation.set( -1.7097976663107175, 0.11259917101419144, 2.464943241451086 );
 
     renderer = new THREE.WebGLRenderer({
         antialias : true,
@@ -289,7 +289,7 @@ function init() {
     renderer.setClearColor( 0x000000, 1.0 )
 
     // if (window.innerWidth > 640) {
-    document.body.appendChild ( renderer.domElement );
+    document.getElementById('forCanvas').appendChild ( renderer.domElement );
     // }
     
     //webXR
@@ -335,7 +335,7 @@ function init() {
     }
     
     animate();
-    document.body.appendChild( createButton( renderer, { requiredFeatures: [ 'hit-test' ] } ));
+    document.getElementById('forButton').appendChild( createButton( renderer, { requiredFeatures: [ 'hit-test' ] } ));
 }
 
 //#########SIMULATION##########
@@ -1221,7 +1221,7 @@ function createButton( renderer, sessionInit = {} ) {
 
             currentSession.removeEventListener( 'end', onSessionEnded );
 
-            button.textContent = 'START AR';
+            button.textContent = 'AR 입장';
             sessionInit.domOverlay.root.style.display = 'none';
 
             currentSession = null;
@@ -1233,10 +1233,10 @@ function createButton( renderer, sessionInit = {} ) {
         button.style.display = '';
 
         button.style.cursor = 'pointer';
-        button.style.left = 'calc(50% - 50px)';
-        button.style.width = '100px';
+        button.style.left = 'calc(50% - 75px)';
+        button.style.width = '150px';
 
-        button.textContent = 'START AR';
+        button.textContent = 'AR 입장';
 
         button.onmouseenter = function () {
 
@@ -1246,7 +1246,7 @@ function createButton( renderer, sessionInit = {} ) {
 
         button.onmouseleave = function () {
 
-            button.style.opacity = '0.5';
+            button.style.opacity = '1.0';
 
         };
 
@@ -1326,15 +1326,15 @@ function createButton( renderer, sessionInit = {} ) {
     function stylizeElement( element ) {
 
         element.style.position = 'absolute';
-        element.style.bottom = '20px';
-        element.style.padding = '12px 6px';
+        // element.style.bottom = '200px';
+        element.style.padding = '12px 10px 16px 12px';
         element.style.border = '1px solid #fff';
-        element.style.borderRadius = '4px';
+        element.style.borderRadius = '30px';
         element.style.background = 'rgba(0,0,0,0.1)';
         element.style.color = '#fff';
-        element.style.font = 'normal 13px sans-serif';
+        element.style.font = '500 22px Noto Sans KR, sans-serif';
         element.style.textAlign = 'center';
-        element.style.opacity = '0.5';
+        element.style.opacity = '1.0';
         element.style.outline = 'none';
         element.style.zIndex = '999';
 
