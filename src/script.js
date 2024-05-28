@@ -331,8 +331,11 @@ function init() {
     initSimulator();
     loadParticlesGLB();
     initGlowMesh();
-    loadGLBScene('scene1')
 
+    if (window.innerWidth > 640) {
+        loadGLBScene('scene1')
+    }
+    
     animate();
     document.body.appendChild( createButton( renderer, { requiredFeatures: [ 'hit-test' ] } ));
 }
