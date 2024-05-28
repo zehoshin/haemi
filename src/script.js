@@ -9,8 +9,8 @@ const overlay = document.createElement( 'div' );
 
 const settings = {
     //amount
-    textureWidth: 32,
-    textureHeight: 32, 
+    textureWidth: 30,
+    textureHeight: 30, 
 
     //simul
     speed: 0.5,
@@ -34,7 +34,7 @@ const settings = {
     //scale
     currentModel: 'Petal',
     currentScene: 'scene1',
-    scaleFactor: 1.0,
+    scaleFactor: 1.2,
     varScaleFactor: 0.6,
     wholeScale: 0.006,
 
@@ -1185,6 +1185,8 @@ function createButton( renderer, sessionInit = {} ) {
             path.setAttribute( 'stroke', '#fff' );
             path.setAttribute( 'stroke-width', 2 );
             svg.appendChild( path );
+
+            onSelect();
 
             if ( sessionInit.optionalFeatures === undefined ) {
 
