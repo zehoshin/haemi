@@ -702,6 +702,23 @@ function animationFrame() {
         }
     }
 
+    settings.opacity = 0.02;
+    settings.glowInternalRadius = 0.0;
+
+    // if (opacityFlag) {
+    //     settings.opacity += 0.00025;
+    //     if (settings.opacity >= 0.04) {
+    //         settings.opacity = 0.04;
+    //         opacityFlag = false;
+    //     }
+    // } else {
+    //     settings.opacity -= 0.00025;
+    //     if (settings.opacity <= 0.02) {
+    //         settings.opacity = 0.02;
+    //         opacityFlag = true;
+    //     }
+    // }
+    
     if (onAR) {
         settings.opacity = 0.02;
         settings.glowInternalRadius = 0.0;
@@ -884,6 +901,10 @@ function loadGLBScene(sceneName) {
     });
 }
 
+function removeScene() {
+    scene.remove(glbModel)
+}
+
 function initGUI() {
     gui = new GUI();
 
@@ -903,6 +924,7 @@ function initGUI() {
     sceneFolder.add({ Scene2: () => loadGLBScene('scene2') }, 'Scene2').name('Scene 2');
     sceneFolder.add({ Scene3: () => loadGLBScene('scene3') }, 'Scene3').name('Scene 3');
     sceneFolder.add({ Scene4: () => loadGLBScene('scene4') }, 'Scene4').name('Scene 4');
+    sceneFolder.add({ remove: () => removeScene() }, 'remove').name('remove');
 
     amountFolder.add( settings, 'textureWidth', 1, 64, 1)
     .listen()
