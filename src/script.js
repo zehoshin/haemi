@@ -1186,8 +1186,6 @@ function createButton( renderer, sessionInit = {} ) {
             path.setAttribute( 'stroke-width', 2 );
             svg.appendChild( path );
 
-            onSelect();
-
             if ( sessionInit.optionalFeatures === undefined ) {
 
                 sessionInit.optionalFeatures = [];
