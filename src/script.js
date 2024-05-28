@@ -1017,10 +1017,6 @@ function onSelect() {
 
 renderer.xr.addEventListener( 'sessionstart', function ( event ) {
     console.log('onAR')
-    if(!particleMesh && !glowMesh) {
-        scene.add(particleMesh);
-        scene.add(glowMesh);
-    }
 } );
 
 renderer.xr.addEventListener( 'sessionend', function ( event ) {
@@ -1159,7 +1155,6 @@ function createButton( renderer, sessionInit = {} ) {
             fixParticlePos.id = "fixParticlePos";
 
             fixParticlePos.addEventListener( 'click', function () {
-                isPosfixed = true;
                 onSelect();
             } );
 
