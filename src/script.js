@@ -32,7 +32,7 @@ const settings = {
     parOpacity: 0.0,
     
     //scale
-    currentModel: 'Petal',
+    currentModel: 'flower',
     currentScene: 'scene1',
     scaleFactor: 1.2,
     varScaleFactor: 0.6,
@@ -46,160 +46,6 @@ const settings = {
     opacity: 0.00,
 };
 
-const presets = {
-    scene1: {
-        //amount
-        textureWidth: 64,
-        textureHeight: 64, 
-
-        //simul
-        speed: 0.5,
-        dieSpeed: 0.001,
-        radius: 1.5,
-        curlSize: 0.015,
-        attraction: -2.0,
-        tornadoStrength: 2.0,
-        circleRadius: 600,
-        circleHeight: 25,
-
-        //color
-        lightIntensity: 0.7,
-        glowIntensity: 0.2,
-        metalness: 0.3,
-        roughness: 1.0,
-        color1: '#cfd945',
-        color2: '#448717',
-        parOpacity: 1.0,
-        
-        //scale
-        currentModel: 'Petal',
-        currentScene: 'scene1',
-        scaleFactor: 0.6,
-        varScaleFactor: 0.6,
-        wholeScale: 0.006,
-
-        //glow
-        falloff: 0.0,
-        glowInternalRadius: 0.0,
-        glowColor: '#66ff00',
-        glowSharpness: 0.0,
-        opacity: 0.005,
-    },
-    scene2: {
-        //amount
-        textureWidth: 16,
-        textureHeight: 16, 
-
-        //simul
-        speed: 0.1,
-        dieSpeed: 0.0,
-        radius: 10.0,
-        curlSize: 0.015,
-        attraction: -2.0,
-        tornadoStrength: 2.0,
-        circleRadius: 1000,
-        circleHeight: 25,
-
-        //color
-        lightIntensity: 0.7,
-        glowIntensity: 0.2,
-        metalness: 0.3,
-        roughness: 1.0,
-        color1: '#f8c75d',
-        color2: '#ebd6f5',
-        parOpacity: 1.0,
-
-        //scale
-        currentModel: 'Petal',
-        currentScene: 'scene2',
-        scaleFactor: 0.6,
-        varScaleFactor: 0.6,
-        wholeScale: 0.006,
-
-        //glow
-        falloff: 0.0,
-        glowInternalRadius: 0.0,
-        glowColor: '#ff7b00',
-        glowSharpness: 0.0,
-        opacity: 0.012,
-    },
-    scene3: {
-        //amount
-        textureWidth: 32,
-        textureHeight: 32,
-
-        //simul
-        speed: 0.8,
-        dieSpeed: 0.001,
-        radius: 1.5,
-        curlSize: 0.015,
-        attraction: -2.0,
-        tornadoStrength: 3.0,
-        circleRadius: 550,
-        circleHeight: 10,
-
-        //color
-        lightIntensity: 1.0,
-        glowIntensity: 0.2,
-        metalness: 0.3,
-        roughness: 1.0,
-        color1: '#bb00ff',
-        color2: '#f5d6eb',
-        parOpacity: 1.0,
-
-        //scale
-        currentModel: 'flower',
-        currentScene: 'scene3',
-        scaleFactor: 2,
-        varScaleFactor: 0.6,
-        wholeScale: 0.006,
-
-        //glow
-        falloff: 0.0,
-        glowInternalRadius: 0.0,
-        glowColor: '#d400ff',
-        glowSharpness: 0.0,
-        opacity: 0.06,
-    },
-    scene4: {
-        //amount
-        textureWidth: 32,
-        textureHeight: 32,
-
-        //simul
-        speed: 0.75,
-        dieSpeed: 0.004,
-        radius: 0.75,
-        curlSize: 0.015,
-        attraction: -3.0,
-        tornadoStrength: 3.3,
-        circleRadius: 600,
-        circleHeight: 25,
-
-        //color
-        lightIntensity: 1.0,
-        glowIntensity: 0.2,
-        metalness: 0.3,
-        roughness: 1.0,
-        color1: '#fbff00',
-        color2: '#f5d6eb',
-        parOpacity: 1.0,
-
-        //scale
-        currentModel: 'flower',
-        currentScene: 'scene4',
-        scaleFactor: 0.3,
-        varScaleFactor: 1.0,
-        wholeScale: 0.006,
-
-        //glow
-        falloff: 0.0,
-        glowInternalRadius: 0.0,
-        glowColor: '#ffa200',
-        glowSharpness: 0.0,
-        opacity: 0.06,
-    },
-};
 
 //frame animation
 let hasAnimationPlayed = false;
@@ -217,9 +63,9 @@ let TEXTURE_HEIGHT = settings.textureHeight;
 let AMOUNT = TEXTURE_WIDTH * TEXTURE_HEIGHT;
 
 const models = [];
-const modelNames = ['Petal', 'flower'];
+const modelNames = ['flower', 'flower'];
 const modelPaths = [
-    './src/models/Petal.glb',
+    './src/models/flower.glb',
     './src/models/flower.glb', 
 ];
 
@@ -1325,7 +1171,7 @@ function createButton( renderer, sessionInit = {} ) {
 
     function stylizeElement( element ) {
 
-        element.style.position = 'absolute';
+        element.style.position = 'relative';
         // element.style.bottom = '200px';
         element.style.padding = '12px 10px 16px 12px';
         element.style.border = '1px solid #fff';
