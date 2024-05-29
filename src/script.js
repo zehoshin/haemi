@@ -188,7 +188,7 @@ function init() {
     // }
     
     animate();
-    // document.getElementById('forButton').appendChild( createButton( renderer, { requiredFeatures: [ 'hit-test' ] } ));
+    document.getElementById('forButton').appendChild( createButton( renderer, { requiredFeatures: [ 'hit-test' ] } ));
 }
 
 //#########SIMULATION##########
@@ -1162,8 +1162,6 @@ function createButton( renderer, sessionInit = {} ) {
 
         button.textContent = 'START'; //AR NOT SUPPORTED
 
-
-
     }
 
     function showARNotAllowed( exception ) {
@@ -1210,27 +1208,38 @@ function createButton( renderer, sessionInit = {} ) {
 
     } else {
 
-        const message = document.createElement( 'a' );
+        button.id = 'ARButton';
+        button.style.display = 'none';
 
-        if ( window.isSecureContext === false ) {
+        stylizeElement( button );
 
-            message.href = document.location.href.replace( /^http:/, 'https:' );
-            message.innerHTML = 'WEBXR NEEDS HTTPS'; // TODO Improve message
+        disableButton();
 
-        } else {
+        button.textContent = 'START';
 
-            message.href = 'https://immersiveweb.dev/';
-            message.innerHTML = 'WEBXR NOT AVAILABLE';
+        return button;
 
-        }
+        // const message = document.createElement( 'a' );
 
-        message.style.left = 'calc(50% - 90px)';
-        message.style.width = '180px';
-        message.style.textDecoration = 'none';
+        // if ( window.isSecureContext === false ) {
 
-        stylizeElement( message );
+        //     message.href = document.location.href.replace( /^http:/, 'https:' );
+        //     message.innerHTML = 'WEBXR NEEDS HTTPS'; // TODO Improve message
 
-        return message;
+        // } else {
+
+        //     message.href = 'https://immersiveweb.dev/';
+        //     message.innerHTML = 'WEBXR NOT AVAILABLE';
+
+        // }
+
+        // message.style.left = 'calc(50% - 90px)';
+        // message.style.width = '180px';
+        // message.style.textDecoration = 'none';
+
+        // stylizeElement( message );
+
+        // return message;
 
     }
 
