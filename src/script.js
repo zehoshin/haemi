@@ -106,7 +106,6 @@ let hitTestSource = null;
 let hitTestSourceRequested = false;
 let onAR = false;
 
-const colorTex = new THREE.TextureLoader().load( "./src/flower.png" );
 const alphaTex = new THREE.TextureLoader().load( "./src/flower_alpha.png" );
 
 
@@ -151,11 +150,11 @@ function init() {
 
     reticle = new THREE.Mesh(
         // new THREE.RingGeometry( 0.15, 0.2, 32 ).rotateX( - Math.PI / 2 ),
-        new THREE.PlaneGeometry(0.5,0.5).rotateX(-Math.PI/2),
+        new THREE.PlaneGeometry(0.15,0.15).rotateX(-Math.PI/2),
         new THREE.MeshBasicMaterial({
-			map: colorTex,
             alphaMap: alphaTex,
-            transparent: true 
+            transparent: true,
+            opacity: 0.5
 		 })
     );
     reticle.matrixAutoUpdate = false;
@@ -864,6 +863,19 @@ function onWindowResize() {
 
 function onSelect() {
     if (reticle.visible) {
+        // Increase opacity to 1
+        new TWEEN.Tween(reticle.material)
+        .to({ opacity: 1 }, 1000) // 1 second duration
+        .easing(TWEEN.Easing.Quadratic.InOut)
+        .onComplete(() => {
+            // Decrease opacity back to 0.5
+            new TWEEN.Tween(reticle.material)
+                .to({ opacity: 0.5 }, 1000) // 1 second duration
+                .easing(TWEEN.Easing.Quadratic.InOut)
+                .start();
+        })
+        .start();
+
         if (!particleMesh) {
             particleMesh = createParticleMesh();
         }
