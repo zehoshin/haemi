@@ -116,7 +116,7 @@ function init() {
     scene.background = new THREE.Color( 0x000000 );
     }
 
-    camera = new THREE.PerspectiveCamera( 90, window.innerWidth / window.innerHeight, 0.1, 10000);
+    camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 10000);
     camera.position.set( 0.6865024336032471, 6.012524566357743, -0.8411735019088319 );
     camera.rotation.set( -1.7097976663107175, 0.11259917101419144, 2.464943241451086 );
 
@@ -176,9 +176,9 @@ function init() {
     loadParticlesGLB();
     initGlowMesh();
 
-    if (window.innerWidth > 640) {
-        loadGLBScene('scene1')
-    }
+    // if (window.innerWidth > 640) {
+    //     loadGLBScene('scene1')
+    // }
     
     animate();
     document.getElementById('forButton').appendChild( createButton( renderer, { requiredFeatures: [ 'hit-test' ] } ));
@@ -996,6 +996,17 @@ let isUIdisplayed = true;
 function createButton( renderer, sessionInit = {} ) {
 
     const button = document.createElement( 'button' );
+    const svg = document.createElementNS( 'http://www.w3.org/2000/svg', 'svg' );
+    svg.setAttribute( 'width', 38 );
+    svg.setAttribute( 'height', 38 );
+    svg.style.position = 'absolute';
+    svg.style.right = '20px';
+    svg.style.top = '20px';
+    const path = document.createElementNS( 'http://www.w3.org/2000/svg', 'path' );
+    path.setAttribute( 'd', 'M 12,12 L 28,28 M 28,12 12,28' );
+    path.setAttribute( 'stroke', '#fff' );
+    path.setAttribute( 'stroke-width', 2 );
+    svg.appendChild( path );
 
     function showStartAR( /*device*/ ) {
 
@@ -1006,12 +1017,6 @@ function createButton( renderer, sessionInit = {} ) {
             overlay.style.display = 'none';
             document.body.appendChild( overlay );
 
-            const svg = document.createElementNS( 'http://www.w3.org/2000/svg', 'svg' );
-            svg.setAttribute( 'width', 38 );
-            svg.setAttribute( 'height', 38 );
-            svg.style.position = 'absolute';
-            svg.style.right = '20px';
-            svg.style.top = '20px';
             svg.addEventListener( 'click', function () {
                 currentSession.end();
             } );
@@ -1040,12 +1045,6 @@ function createButton( renderer, sessionInit = {} ) {
             overlay.appendChild(hideUI);
 
             overlay.appendChild( svg );
-
-            const path = document.createElementNS( 'http://www.w3.org/2000/svg', 'path' );
-            path.setAttribute( 'd', 'M 12,12 L 28,28 M 28,12 12,28' );
-            path.setAttribute( 'stroke', '#fff' );
-            path.setAttribute( 'stroke-width', 2 );
-            svg.appendChild( path );
 
             if ( sessionInit.optionalFeatures === undefined ) {
 
@@ -1169,7 +1168,12 @@ function createButton( renderer, sessionInit = {} ) {
         button.onmouseenter = null;
         button.onmouseleave = null;
 
-        button.onclick = null;
+        // button.onclick = null;
+        button.onclick = function() {
+            document.getElementById('text').style = 'display: none;'
+
+        };
+
 
     }
 
@@ -1177,7 +1181,7 @@ function createButton( renderer, sessionInit = {} ) {
 
         disableButton();
 
-        button.textContent = 'AR NOT SUPPORTED';
+        button.textContent = '입장'; //AR NOT SUPPORTED
 
     }
 
@@ -1187,7 +1191,7 @@ function createButton( renderer, sessionInit = {} ) {
 
         console.warn( 'Exception when trying to call xr.isSessionSupported', exception );
 
-        button.textContent = 'AR NOT ALLOWED';
+        button.textContent = '입장'; //AR NOT ALLOWED
 
     }
 
