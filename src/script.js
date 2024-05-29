@@ -159,7 +159,7 @@ function init() {
     );
     reticle.matrixAutoUpdate = false;
     reticle.visible = false;
-    reticle.renderOrder = 1;
+    reticle.renderOrder = 3;
     scene.add( reticle );
 
     //light
@@ -864,18 +864,14 @@ function onWindowResize() {
 
 function onSelect() {
     if (reticle.visible) {
-        // Increase opacity to 1
+        
+        reticle.material.opacity = 1;
+
         new TWEEN.Tween(reticle.material)
-        .to({ opacity: 1 }, 0) // 1 second duration
-        .easing(TWEEN.Easing.Quadratic.InOut)
-        .onComplete(() => {
-            // Decrease opacity back to 0.5
-            new TWEEN.Tween(reticle.material)
-                .to({ opacity: 0.5 }, 1000) // 1 second duration
-                .easing(TWEEN.Easing.Quadratic.InOut)
-                .start();
-        })
-        .start();
+            .to({ opacity: 0.5 }, 1000)
+            .easing(TWEEN.Easing.Quadratic.InOut)
+            .start();
+
 
         if (!particleMesh) {
             particleMesh = createParticleMesh();
