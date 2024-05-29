@@ -150,7 +150,7 @@ function init() {
 
     reticle = new THREE.Mesh(
         // new THREE.RingGeometry( 0.15, 0.2, 32 ).rotateX( - Math.PI / 2 ),
-        new THREE.PlaneGeometry(0.15,0.15).rotateX(-Math.PI/2),
+        new THREE.PlaneGeometry(0.2,0.2).rotateX(-Math.PI/2),
         new THREE.MeshBasicMaterial({
             alphaMap: alphaTex,
             transparent: true,
@@ -159,6 +159,7 @@ function init() {
     );
     reticle.matrixAutoUpdate = false;
     reticle.visible = false;
+    reticle.renderOrder = 1;
     scene.add( reticle );
 
     //light
@@ -865,7 +866,7 @@ function onSelect() {
     if (reticle.visible) {
         // Increase opacity to 1
         new TWEEN.Tween(reticle.material)
-        .to({ opacity: 1 }, 1000) // 1 second duration
+        .to({ opacity: 1 }, 0) // 1 second duration
         .easing(TWEEN.Easing.Quadratic.InOut)
         .onComplete(() => {
             // Decrease opacity back to 0.5
