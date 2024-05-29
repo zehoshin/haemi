@@ -953,6 +953,7 @@ function createButton( renderer, sessionInit = {} ) {
             const howToTextEng = document.createElement('div');
             howToTextEng.className = 'h2_eng';
             howToTextEng.className = 'eng';
+            howToTextKR.style = 'line-height: 1.5;';
             howToTextEng.innerHTML = 'When you look at the floor through the camera, a white flower will appear.<br>If you tab the button at the bottom right, the position of the wildflowers will adjust to match the position of the white flower. If the wildflowers disappear occasionally, please tab the button.';
 
             const close = document.createElement('div');
