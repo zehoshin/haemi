@@ -16,9 +16,9 @@
 				width: 100dvw;
 				height: 100dvh;
 				overflow: hidden;
-				background-color: rgba(0,0,0,0.5);
+				background-color: rgba(0,0,0,0.75);
 				position: absolute;
-				z-index: 999;
+				z-index: 1000;
 				display: flex;
 				align-items: center;
 				justify-content: center;
@@ -26,6 +26,15 @@
 
 			.howToText {
 				width: 310px;
+			}
+
+			.close {
+				margin-top: 25px;
+				position: absolute;
+				width: 20px;
+				height: 20px;
+				left: calc(50% - 10px);
+				background-image: url(./src/img/close.svg);
 			}
 
 			#fixParticlePos {
@@ -226,6 +235,7 @@
 				<div class="h2_eng eng">
 					When you look at the floor through the camera, a white flower will appear. If you tab the button at the bottom right, the position of the wildflowers will adjust to match the position of the white flower. If the wildflowers disappear occasionally, please tab the button.
 				</div>
+				<div class="close"></div>
 			</div>
 		</div> -->
 		<div id="fixParticlePos"></div>

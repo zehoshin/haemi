@@ -915,24 +915,12 @@ function createButton( renderer, sessionInit = {} ) {
     svg.style.top = '20px';
     svg.style.zIndex = '999';
 
-    const svg2 = svg;
-    svg2.setAttribute( 'width', 38 );
-    svg2.setAttribute( 'height', 38 );
-    svg2.style.marginTop = '20px';
-
-
     const path = document.createElementNS( 'http://www.w3.org/2000/svg', 'path' );
     path.setAttribute( 'd', 'M 12,12 L 28,28 M 28,12 12,28' );
     path.setAttribute( 'stroke', '#fff' );
     path.setAttribute( 'stroke-width', 2 );
 
-    const path2 = path;
-    path2.setAttribute( 'd', 'M 12,12 L 28,28 M 28,12 12,28' );
-    path2.setAttribute( 'stroke', '#fff' );
-    path2.setAttribute( 'stroke-width', 2 );
-
     svg.appendChild( path );
-    svg2.appendChild(path2);
 
     function showStartAR( /*device*/ ) {
 
@@ -967,14 +955,17 @@ function createButton( renderer, sessionInit = {} ) {
             howToTextEng.className = 'eng';
             howToTextEng.innerHTML = 'When you look at the floor through the camera, a white flower will appear. If you tab the button at the bottom right, the position of the wildflowers will adjust to match the position of the white flower. If the wildflowers disappear occasionally, please tab the button.';
 
+            const close = document.createElement('div');
+            close.className = 'close';
+
             howToAR.appendChild(howToText);
             howToText.appendChild(howToTextKR);
             howToText.appendChild(howToTextEng);
-            howToText.appendChild(svg2);
+            howToText.appendChild(close);
 
             overlay.appendChild(howToAR);
 
-            svg2.addEventListener('click', function () {
+            close.addEventListener('click', function () {
                 overlay.removeChild(howToAR);
             })
 
