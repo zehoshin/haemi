@@ -69,14 +69,6 @@ const modelPaths = [
     './src/models/flower.glb', 
 ];
 
-const sceneNames = ['scene1', 'scene2', 'scene3', 'scene4'];
-const scenePaths = {
-    'scene1': './src/models/scene1.glb',
-    'scene2': './src/models/scene2.glb',
-    'scene3': './src/models/scene3.glb',
-    'scene4': './src/models/scene4.glb'
-};
-
 let camera, simulCamera, scene, simulScene, renderer, controls, gui;
 const loader = new GLTFLoader();
 
@@ -97,7 +89,6 @@ let followPointTime = 0;
 let initAnimation = 0;
 
 //instance
-let glbModel;
 let colorIndices, glowTimings;
 
 //webXR
@@ -106,7 +97,7 @@ let hitTestSource = null;
 let hitTestSourceRequested = false;
 let onAR = false;
 
-const alphaTex = new THREE.TextureLoader().load( "./src/flower_alpha.png" );
+const alphaTex = new THREE.TextureLoader().load( "./src/img/flower_alpha.png" );
 
 
 init();
@@ -666,6 +657,7 @@ function render(timestamp, frame) {
     //     particleMesh.position.copy(lastValidPosition);
     //     glowMesh.position.copy(lastValidPosition);
     // }
+
     scene.traverse( function( object ) {
         object.frustumCulled = false;
     } );
@@ -864,7 +856,7 @@ function onWindowResize() {
 
 function onSelect() {
     if (reticle.visible) {
-        
+
         reticle.material.opacity = 1;
 
         new TWEEN.Tween(reticle.material)
@@ -912,114 +904,6 @@ renderer.xr.addEventListener( 'sessionend', function ( event ) {
     console.log('offAR')
 } );
 
-function loadGLBScene(sceneName) {
-    // Clear existing models
-    if (glbModel) {
-        scene.remove(glbModel);
-    }
-
-    loader.load(scenePaths[sceneName], function (gltf) {
-        glbModel = gltf.scene;
-        let scaleFactor = 1;
-        glbModel.position.y = -0.5;
-        glbModel.position.z = 6;
-        glbModel.scale.set(scaleFactor, scaleFactor, scaleFactor);
-        scene.add(glbModel);
-    });
-}
-
-function removeScene() {
-    scene.remove(glbModel)
-}
-
-function initGUI() {
-    gui = new GUI();
-
-    const animationFolder = gui.addFolder( 'animation' );
-
-    const sceneFolder = gui.addFolder( 'scene' );
-    const amountFolder = gui.addFolder( 'amount' );
-    const simulFolder = gui.addFolder( 'simul' );
-    const modelFolder = gui.addFolder( 'model' );
-    const colorFolder = gui.addFolder( 'color' );
-    const scaleFolder = gui.addFolder( 'scale' );
-    const glowFolder = gui.addFolder( 'glow' );
-
-    animationFolder.add({ play: playAnimation }, 'play').name('Play');
-    
-    sceneFolder.add({ Scene1: () => loadGLBScene('scene1') }, 'Scene1').name('Scene 1');
-    sceneFolder.add({ Scene2: () => loadGLBScene('scene2') }, 'Scene2').name('Scene 2');
-    sceneFolder.add({ Scene3: () => loadGLBScene('scene3') }, 'Scene3').name('Scene 3');
-    sceneFolder.add({ Scene4: () => loadGLBScene('scene4') }, 'Scene4').name('Scene 4');
-    sceneFolder.add({ remove: () => removeScene() }, 'remove').name('remove');
-
-    amountFolder.add( settings, 'textureWidth', 1, 64, 1)
-    .listen()
-    .onChange(function() {
-        updateTexture();
-    });
-    amountFolder.add( settings, 'textureHeight', 1, 64, 1)
-    .listen()
-    .onChange(function() {
-        updateTexture();
-    });
-    
-    simulFolder.add( settings, 'speed', 0, 3 ).listen();
-    simulFolder.add( settings, 'dieSpeed', 0, 0.05 ).listen();
-    simulFolder.add( settings, 'radius', 0, 10 ).listen();
-    simulFolder.add( settings, 'curlSize', 0, 0.05 ).listen();
-    simulFolder.add( settings, 'attraction', -20, 20 ).listen();
-    simulFolder.add( settings, 'tornadoStrength', 0.0, 20.0 ).listen();
-    simulFolder.add( settings, 'circleRadius', 0, 1000, 1).listen();
-    simulFolder.add( settings, 'circleHeight', 0, 100, 1 ).listen();
-    
-    colorFolder.add( settings, 'lightIntensity', 0.0, 5.0 ).listen();
-    colorFolder.add( settings, 'glowIntensity', 0.0, 1.0 ).listen();
-    colorFolder.add( settings, 'metalness', 0.0, 1.0 ).listen();
-    colorFolder.add( settings, 'roughness', 0.0, 1.0 ).listen();
-    colorFolder.addColor( settings, 'color1' ).listen();
-    colorFolder.addColor( settings, 'color2' ).listen();
-    colorFolder.add( settings, 'parOpacity', 0.0, 1.0 ).listen();
-
-    modelFolder.add(settings, 'currentModel', modelNames).name('Model')
-    .listen()
-    .onChange(function(value) {
-        const modelIndex = modelNames.indexOf(value);
-        updateParticleMesh(models[modelIndex]);
-    });
-
-    if (window.innerWidth > 640) {
-    modelFolder.add(settings, 'currentScene', sceneNames).name('Scene')
-    .listen()
-    .onChange(function(value) {
-        loadGLBScene(value);
-    });
-    }
-    scaleFolder.add(settings, 'scaleFactor', 0, 20).name('Scale Factor')
-    .listen()
-    .onChange(function(value) {
-        updateScaleTexture();
-    });
-    scaleFolder.add(settings, 'varScaleFactor', 0, 1).name('Var Scale Factor')
-    .listen()
-    .onChange(function(value) {
-        updateScaleTexture();
-    });
-    scaleFolder.add( settings, 'wholeScale', 0.0, 10.0 ).listen();
-
-    glowFolder.add( settings, 'falloff', 0, 10).listen();
-    glowFolder.add( settings, 'glowInternalRadius', 0, 10).listen();
-    glowFolder.addColor( settings, 'glowColor' ).listen();
-    glowFolder.add( settings, 'glowSharpness', 0, 10).listen();
-    glowFolder.add( settings, 'opacity', 0, 1).listen();
-
-
-    gui.close();
-}
-
-
-let isUIdisplayed = true;
-
 function createButton( renderer, sessionInit = {} ) {
 
     const button = document.createElement( 'button' );
@@ -1030,13 +914,25 @@ function createButton( renderer, sessionInit = {} ) {
     svg.style.right = '20px';
     svg.style.top = '20px';
     svg.style.zIndex = '999';
+
+    const svg2 = svg;
+    svg2.setAttribute( 'width', 38 );
+    svg2.setAttribute( 'height', 38 );
+    svg2.style.marginTop = '20px';
+
+
     const path = document.createElementNS( 'http://www.w3.org/2000/svg', 'path' );
     path.setAttribute( 'd', 'M 12,12 L 28,28 M 28,12 12,28' );
     path.setAttribute( 'stroke', '#fff' );
     path.setAttribute( 'stroke-width', 2 );
-    svg.appendChild( path );
 
-    let altAR = false;
+    const path2 = path;
+    path2.setAttribute( 'd', 'M 12,12 L 28,28 M 28,12 12,28' );
+    path2.setAttribute( 'stroke', '#fff' );
+    path2.setAttribute( 'stroke-width', 2 );
+
+    svg.appendChild( path );
+    svg2.appendChild(path2);
 
     function showStartAR( /*device*/ ) {
 
@@ -1054,28 +950,39 @@ function createButton( renderer, sessionInit = {} ) {
             const fixParticlePos = document.createElement("div");
             fixParticlePos.id = "fixParticlePos";
 
+            const howToAR = document.createElement('div');
+            howToAR.id = 'howToAR';
+
+            const howToText = document.createElement('div');
+            howToText.className = 'howToText';
+
+            const howToTextKR = document.createElement('div');
+            howToTextKR.className = 'h2_kor';
+            howToTextKR.className = 'kor';
+            howToTextKR.style = 'margin-bottom: 25px; line-height: 1.5;';
+            howToTextKR.innerHTML = '카메라를 통해 바닥을 바라보면 하얀 꽃이 나타납니다. 오른쪽 아래의 버튼을 누르면 하얀 꽃의 위치에 맞게 야생화의 위치가 변경됩니다. 가끔 야생화가 사라지면 버튼을 눌러주세요.<br><br>✿';
+
+            const howToTextEng = document.createElement('div');
+            howToTextEng.className = 'h2_eng';
+            howToTextEng.className = 'eng';
+            howToTextEng.innerHTML = 'When you look at the floor through the camera, a white flower will appear. If you tab the button at the bottom right, the position of the wildflowers will adjust to match the position of the white flower. If the wildflowers disappear occasionally, please tab the button.';
+
+            howToAR.appendChild(howToText);
+            howToText.appendChild(howToTextKR);
+            howToText.appendChild(howToTextEng);
+            howToText.appendChild(svg2);
+
+            overlay.appendChild(howToAR);
+
+            svg2.addEventListener('click', function () {
+                overlay.removeChild(howToAR);
+            })
+
             fixParticlePos.addEventListener( 'click', function () {
                 onSelect();
             } );
 
-            // const hideUI = document.createElement("div");
-            // hideUI.id = "hideUI";
-
-            // hideUI.addEventListener( 'click', function () {
-            //     if (isUIdisplayed) {
-            //         fixParticlePos.style.display = 'none';
-            //         reticle.visible = false;
-            //         isUIdisplayed = false;
-            //     } else {
-            //         fixParticlePos.style.display = 'block';
-            //         reticle.visible = true;
-            //         isUIdisplayed = true;
-            //     }
-            // } );
-
             overlay.appendChild(fixParticlePos);
-            // overlay.appendChild(hideUI);
-
             overlay.appendChild( svg );
 
             if ( sessionInit.optionalFeatures === undefined ) {
@@ -1103,14 +1010,6 @@ function createButton( renderer, sessionInit = {} ) {
 
             button.textContent = 'STOP AR';
             sessionInit.domOverlay.root.style.display = '';
-
-            //
-            
-            // if (window.innerWidth > 640) {
-            // 	document.body.appendChild ( renderer.domElement );
-            // }
-
-            //
 
             currentSession = session;
 
