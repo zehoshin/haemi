@@ -106,15 +106,19 @@ let hitTestSource = null;
 let hitTestSourceRequested = false;
 let onAR = false;
 
+const colorTex = new THREE.TextureLoader().load( "./src/flower.png" );
+const alphaTex = new THREE.TextureLoader().load( "./src/flower_alpha.png" );
+
+
 init();
 
 function init() {
     //set Render Scene
 
     scene = new THREE.Scene();
-    if (window.innerWidth > 640) {
-    scene.background = new THREE.Color( 0x000000 );
-    }
+    // if (window.innerWidth > 640) {
+    // scene.background = new THREE.Color( 0x000000 );
+    // }
 
     camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 10000);
     camera.position.set( 0.6865024336032471, 6.012524566357743, -0.8411735019088319 );
@@ -144,9 +148,15 @@ function init() {
     // controller.addEventListener( 'select', onSelect );
     // scene.add( controller );
 
+
     reticle = new THREE.Mesh(
-        new THREE.RingGeometry( 0.15, 0.2, 32 ).rotateX( - Math.PI / 2 ),
-        new THREE.MeshBasicMaterial()
+        // new THREE.RingGeometry( 0.15, 0.2, 32 ).rotateX( - Math.PI / 2 ),
+        new THREE.PlaneGeometry(0.5,0.5).rotateX(-Math.PI/2),
+        new THREE.MeshBasicMaterial({
+			map: colorTex,
+            alphaMap: alphaTex,
+            transparent: true 
+		 })
     );
     reticle.matrixAutoUpdate = false;
     reticle.visible = false;
@@ -161,6 +171,12 @@ function init() {
     //controls
 
     controls = new OrbitControls( camera, renderer.domElement );
+    controls.mouseButtons = {
+        LEFT: THREE.MOUSE.ROTATE,
+        MIDDLE: THREE.MOUSE.DOLLY,
+        RIGHT: THREE.MOUSE.ROTATE
+        // RIGHT: THREE.MOUSE.PAN
+    }
     controls.update();
     window.addEventListener('resize', onWindowResize, false);
 
@@ -169,7 +185,7 @@ function init() {
     document.body.appendChild( overlay );
 
     //GUI
-    initGUI();
+    // initGUI();
 
     //init Simulator & Particles & Glow
     initSimulator();
@@ -597,10 +613,12 @@ function initGlowMesh() {
 
 function animate() {
     renderer.setAnimationLoop( render );
+
 }
   
 function render(timestamp, frame) {
     controls.update();
+    TWEEN.update(); 
 
     let newTime = Date.now();
     dt = newTime - time;
@@ -1002,11 +1020,14 @@ function createButton( renderer, sessionInit = {} ) {
     svg.style.position = 'absolute';
     svg.style.right = '20px';
     svg.style.top = '20px';
+    svg.style.zIndex = '999';
     const path = document.createElementNS( 'http://www.w3.org/2000/svg', 'path' );
     path.setAttribute( 'd', 'M 12,12 L 28,28 M 28,12 12,28' );
     path.setAttribute( 'stroke', '#fff' );
     path.setAttribute( 'stroke-width', 2 );
     svg.appendChild( path );
+
+    let altAR = false;
 
     function showStartAR( /*device*/ ) {
 
@@ -1028,21 +1049,23 @@ function createButton( renderer, sessionInit = {} ) {
                 onSelect();
             } );
 
-            const hideUI = document.createElement("div");
-            hideUI.id = "hideUI";
+            // const hideUI = document.createElement("div");
+            // hideUI.id = "hideUI";
 
-            hideUI.addEventListener( 'click', function () {
-                if (isUIdisplayed) {
-                    fixParticlePos.style.display = 'none';
-                    isUIdisplayed = false;
-                } else {
-                    fixParticlePos.style.display = 'block';
-                    isUIdisplayed = true;
-                }
-            } );
+            // hideUI.addEventListener( 'click', function () {
+            //     if (isUIdisplayed) {
+            //         fixParticlePos.style.display = 'none';
+            //         reticle.visible = false;
+            //         isUIdisplayed = false;
+            //     } else {
+            //         fixParticlePos.style.display = 'block';
+            //         reticle.visible = true;
+            //         isUIdisplayed = true;
+            //     }
+            // } );
 
             overlay.appendChild(fixParticlePos);
-            overlay.appendChild(hideUI);
+            // overlay.appendChild(hideUI);
 
             overlay.appendChild( svg );
 
@@ -1088,7 +1111,7 @@ function createButton( renderer, sessionInit = {} ) {
 
             currentSession.removeEventListener( 'end', onSessionEnded );
 
-            button.textContent = 'AR 입장';
+            button.textContent = 'START AR';
             sessionInit.domOverlay.root.style.display = 'none';
 
             currentSession = null;
@@ -1103,7 +1126,7 @@ function createButton( renderer, sessionInit = {} ) {
         button.style.left = 'calc(50% - 75px)';
         button.style.width = '150px';
 
-        button.textContent = 'AR 입장';
+        button.textContent = 'START AR';
 
         button.onmouseenter = function () {
 
@@ -1170,10 +1193,67 @@ function createButton( renderer, sessionInit = {} ) {
 
         // button.onclick = null;
         button.onclick = function() {
-            document.getElementById('text').style = 'display: none;'
-
+            document.getElementById('forClose').appendChild(svg);
+            document.getElementById('text').style = 'animation: fade_out 1s ease-in-out forwards';
+            document.getElementById('background').style = 'animation: fade_in 2s ease-in-out forwards';
+    
+            // Define the initial and target positions and rotations
+            const initialPosition = { x: camera.position.x, y: camera.position.y, z: camera.position.z };
+            const targetPosition = { x: 3.688544880029717, y: 1.1276707950370315, z: -3.144522580730786 };
+            const initialRotation = { x: camera.rotation.x, y: camera.rotation.y, z: camera.rotation.z };
+            const targetRotation = { x: -2.797264323083368, y: 0.8348568737350391, z: 2.881794815855286 };
+    
+            // Create tweens for position and rotation
+            const positionTween = new TWEEN.Tween(initialPosition)
+                .to(targetPosition, 2000) // Duration of 2 seconds
+                .easing(TWEEN.Easing.Quadratic.InOut)
+                .onUpdate(() => {
+                    camera.position.set(initialPosition.x, initialPosition.y, initialPosition.z);
+                });
+    
+            const rotationTween = new TWEEN.Tween(initialRotation)
+                .to(targetRotation, 2000) // Duration of 2 seconds
+                .easing(TWEEN.Easing.Quadratic.InOut)
+                .onUpdate(() => {
+                    camera.rotation.set(initialRotation.x, initialRotation.y, initialRotation.z);
+                });
+    
+            // Start the tweens
+            positionTween.start();
+            rotationTween.start();
+    
+            // Add an event listener to revert changes on svg click
+            svg.addEventListener("click", function () {
+                document.getElementById('forClose').removeChild(svg);
+                document.getElementById('text').style = 'animation: fade_in 1s ease-in-out forwards';
+                document.getElementById('background').style = 'animation: fade_out 2s ease-in-out forwards';
+    
+                // Define the initial and target positions and rotations for revert
+                const revertInitialPosition = { x: camera.position.x, y: camera.position.y, z: camera.position.z };
+                const revertTargetPosition = { x: 0.6865024336032471, y: 6.012524566357743, z: -0.8411735019088319 };
+                const revertInitialRotation = { x: camera.rotation.x, y: camera.rotation.y, z: camera.rotation.z };
+                const revertTargetRotation = { x: -1.7097976663107175, y: 0.11259917101419144, z: 2.464943241451086 };
+    
+                // Create tweens for reverting position and rotation
+                const revertPositionTween = new TWEEN.Tween(revertInitialPosition)
+                    .to(revertTargetPosition, 2000) // Duration of 2 seconds
+                    .easing(TWEEN.Easing.Quadratic.InOut)
+                    .onUpdate(() => {
+                        camera.position.set(revertInitialPosition.x, revertInitialPosition.y, revertInitialPosition.z);
+                    });
+    
+                const revertRotationTween = new TWEEN.Tween(revertInitialRotation)
+                    .to(revertTargetRotation, 2000) // Duration of 2 seconds
+                    .easing(TWEEN.Easing.Quadratic.InOut)
+                    .onUpdate(() => {
+                        camera.rotation.set(revertInitialRotation.x, revertInitialRotation.y, revertInitialRotation.z);
+                    });
+    
+                // Start the revert tweens
+                revertPositionTween.start();
+                revertRotationTween.start();
+            });
         };
-
 
     }
 
@@ -1181,7 +1261,9 @@ function createButton( renderer, sessionInit = {} ) {
 
         disableButton();
 
-        button.textContent = '입장'; //AR NOT SUPPORTED
+        button.textContent = 'START'; //AR NOT SUPPORTED
+
+
 
     }
 
@@ -1191,7 +1273,7 @@ function createButton( renderer, sessionInit = {} ) {
 
         console.warn( 'Exception when trying to call xr.isSessionSupported', exception );
 
-        button.textContent = '입장'; //AR NOT ALLOWED
+        button.textContent = 'START'; //AR NOT ALLOWED
 
     }
 

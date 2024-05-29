@@ -13,8 +13,7 @@
 				width: 75px;
 				height: 75px;
 				border-radius: 50%;
-				background-color: rgb(200, 200, 200);
-				bottom: 300px;
+				bottom: 150px;
 				right: 30px;
 				z-index: 9999;
 			}
@@ -24,10 +23,33 @@
 				width: 75px;
 				height: 75px;
 				border-radius: 50%;
-				background-color: rgb(100, 100, 100);
-				bottom: 200px;
+				bottom: 50px;
 				right: 30px;
 				z-index: 9999;
+				background-image: url(./src/icon.svg);
+				background-size: cover;
+				border: 1px solid white;
+				box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+				backdrop-filter: blur(5px);
+			}
+
+			#fixParticlePos:after {
+				content: "";
+				background: #ffffff;
+				display: block;
+				position: absolute;
+				width: 75px;
+				height: 75px;
+				border-radius: 50%;
+				opacity: 0;
+				transition: all 0.8s
+			}
+
+			#fixParticlePos:active:after {
+				padding: 0;
+				margin: 0;
+				opacity: 0.75;
+				transition: 0s
 			}
 		
 			body {
@@ -85,6 +107,7 @@
 				font-size: 15px;
 				margin-bottom: 7px;
 				font-weight: 400;
+				line-height: 1.5;
 			}
 
 			.h3_eng {
@@ -110,7 +133,7 @@
 				top: 50%;
 				left: 50%;
 				transform: translate(-50%, -50%);
-				mix-blend-mode: difference;
+				/* mix-blend-mode: difference; */
 				display: flex;
 				flex-direction: column;
 				align-items: center;
@@ -154,11 +177,41 @@
 				width: 50%;
 			}
 
+			#background {
+				width: 100dvw;
+				height: 100dvh;
+				margin: 0;
+				overflow: hidden;
+				background-image: url(./src/night.png);
+				background-size: cover;
+				opacity: 0.0;
+				/* animation: name duration timing-function delay iteration-count direction fill-mode; */
+			}
+
+			@keyframes fade_in {
+				from {
+					opacity: 0;
+				}
+				to {
+					opacity: 1;
+				}
+			}
+
+			@keyframes fade_out {
+				from {
+					opacity: 1;
+				}
+				to {
+					opacity: 0;
+				}
+			}
 		</style>
 	</head>
 	<body>
-		<!-- <div id="hideUI"></div>
-		<div id="fixParticlePos"></div> -->
+		<!-- <div id="hideUI"></div> -->
+		<div id="fixParticlePos"></div>
+		<div id="background"></div>
+		<div id="forClose"></div>
 		<div id="forCanvas"></div>
 		<div id="text" style="display: block;">
 		<div class="title_text preventTouch">
@@ -172,7 +225,7 @@
 			</div>
 			<div class="row">
 				<div class="h2_kor kor">
-					작게 피어나는 야생화와 들판을 보며 안식의 시간을 느껴보세요.
+					밝게 피어나는 야생화를 보며 안식의 시간을 느껴보세요.
 				</div>
 				<div class="h2_eng eng">
 					Take a moment to feel the tranquility of the blooming wildflowers.
@@ -183,11 +236,11 @@
 			</div>
 			<div class="row">
 				<div class="h3_kor kor">
-					바닥 스크린 위에서 더욱 최적하게<br>관람할 수 있습니다.
-					<br>(AR은 android 기기에서만 가능합니다.)
+					가상현실은 원형 바닥 스크린 위에서<br>더욱 최적하게 관람할 수 있습니다.
+					<br>(android 기기에서 가능합니다.)
 				</div>
 				<div class="h3_eng eng">
-					For a better viewing experience, Please move onto the floor screen.
+					For a better AR experience,<br>Please move onto the floor screen.
 					<br>(AR is only available on Android devices.)
 				</div>
 			</div>
@@ -215,7 +268,7 @@
 				
 			}
 		</script>
-		<script type="module" src="./src/script.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/20.0.0/tween.umd.js"></script>		<script type="module" src="./src/script.js"></script>
 		<script id="quadVert" type="x-shader/x-vertex">
 			precision highp float;
 
