@@ -188,7 +188,7 @@ function init() {
     // }
     
     animate();
-    document.getElementById('forButton').appendChild( createButton( renderer, { requiredFeatures: [ 'hit-test' ] } ));
+    // document.getElementById('forButton').appendChild( createButton( renderer, { requiredFeatures: [ 'hit-test' ] } ));
 }
 
 //#########SIMULATION##########
