@@ -1209,38 +1209,38 @@ function createButton( renderer, sessionInit = {} ) {
 
     } else {
 
-        // button.id = 'ARButton';
-        // button.style.display = 'none';
+        button.id = 'ARButton';
+        button.style.display = 'none';
 
-        // stylizeElement( button );
+        stylizeElement( button );
 
-        // disableButton();
+        disableButton();
 
-        // button.textContent = 'START';
+        button.textContent = 'START';
 
-        // return button;
+        return button;
 
-        const message = document.createElement( 'a' );
+        // const message = document.createElement( 'a' );
 
-        if ( window.isSecureContext === false ) {
+        // if ( window.isSecureContext === false ) {
 
-            message.href = document.location.href.replace( /^http:/, 'https:' );
-            message.innerHTML = 'WEBXR NEEDS HTTPS'; // TODO Improve message
+        //     message.href = document.location.href.replace( /^http:/, 'https:' );
+        //     message.innerHTML = 'WEBXR NEEDS HTTPS'; // TODO Improve message
 
-        } else {
+        // } else {
 
-            message.href = 'https://immersiveweb.dev/';
-            message.innerHTML = 'WEBXR NOT AVAILABLE';
+        //     message.href = 'https://immersiveweb.dev/';
+        //     message.innerHTML = 'WEBXR NOT AVAILABLE';
 
-        }
+        // }
 
-        message.style.left = 'calc(50% - 90px)';
-        message.style.width = '180px';
-        message.style.textDecoration = 'none';
+        // message.style.left = 'calc(50% - 90px)';
+        // message.style.width = '180px';
+        // message.style.textDecoration = 'none';
 
-        stylizeElement( message );
+        // stylizeElement( message );
 
-        return message;
+        // return message;
 
     }
 
