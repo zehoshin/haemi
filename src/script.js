@@ -1,9 +1,9 @@
-import * as THREE from 'three'
-import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import * as THREE from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/0.164.1/three.module.min.js';
+import { GUI } from './jsm/libs/lil-gui.module.min.js';
+import { OrbitControls } from './jsm/controls/OrbitControls.js';
+import { GLTFLoader } from './jsm/loaders/GLTFLoader.js';
 // import { ARButton } from 'three/addons/webxr/ARButton.js';
-import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js'
+import * as BufferGeometryUtils from './jsm/utils/BufferGeometryUtils.js'
 
 const overlay = document.createElement( 'div' );
 
