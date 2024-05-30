@@ -25,7 +25,7 @@
 			}
 
 			.howToText {
-				width: 310px;
+				width: 320px;
 			}
 
 			.close {
@@ -136,13 +136,13 @@
 			}
 
 			.cap_kor {
-				font-size: 14px;
+				font-size: 12px;
 				text-align: left;
 				width: 105px;
 			}
 
 			.cap_eng {
-				font-size: 14px;
+				font-size: 12px;
 				text-align: left;
 				width: 105px;
 			}
@@ -168,8 +168,8 @@
 			}
 
 			#forButton{
-				margin-top: 30px;
-				margin-bottom: 50px;
+				margin-top: 5px;
+				margin-bottom:30px;
 				pointer-events: auto;
 			}
 
@@ -207,6 +207,10 @@
 				/* animation: name duration timing-function delay iteration-count direction fill-mode; */
 			}
 
+			span {
+ 				font-size: small;
+			}
+
 			@keyframes fade_in {
 				from {
 					opacity: 0;
@@ -230,15 +234,15 @@
 		<!-- <div id="howToAR">
 			<div class="howToText">
 				<div class="h2_kor kor" style="margin-bottom: 25px; line-height: 1.5;">
-					카메라를 통해 바닥을 바라보면 하얀 꽃이 나타납니다. 오른쪽 아래의 버튼을 누르면 하얀 꽃의 위치에 맞게 야생화의 위치가 변경됩니다. 가끔 야생화가 사라지면 버튼을 눌러주세요.<br><br>✿
+					원형 바닥 스크린 중앙에 하얀 꽃을 두고 오른쪽 아래 버튼을 눌러보세요!<br><br>버튼을 누르면 하얀 꽃의 위치에 맞게 야생화의 생성 위치가 변경됩니다.<br>가끔 야생화가 사라지면 버튼을 눌러주세요.<br><br>✿
 				</div>
 				<div class="h2_eng eng" style="line-height: 1.5;">
-					When you look at the floor through the camera, a white flower will appear.<br>If you tab the button at the bottom right, the position of the wildflowers will adjust to match the position of the white flower. If the wildflowers disappear occasionally, please tab the button.
+					Place the white flower at the center of the circular floor screen and tab the button at the bottom right!<br><br>When you tab the button, the position where the wildflowers appear will adjust to match the position of the white flower. If the wildflowers disappear occasionally, please tab the button.
 				</div>
 				<div class="close"></div>
 			</div>
-		</div>
-		<div id="fixParticlePos"></div> -->
+		</div> -->
+		<!-- <div id="fixParticlePos"></div> -->
 
 		<div id="background"></div>
 		<div id="forClose"></div>
@@ -267,24 +271,26 @@
 			<div class="row">
 				<div class="h3_kor kor">
 					증강현실은 원형 바닥 스크린 위에서<br>더욱 최적하게 관람할 수 있습니다.
-					<br>(android 기기에서 가능합니다.)
+					<br>
 				</div>
 				<div class="h3_eng eng">
 					For a better AR experience,<br>Please move onto the floor screen.
-					<br>(AR is only available on Android devices.)
+					<br>
 				</div>
+				<span class="kor">지원되는 기기 확인</span>
+				<span class="eng">Check supported devices</span>
 			</div>
 		</div>
 
 		<div class="col preventTouch">
 			<div class="col_width">
 				<div class="cap_eng eng">
-					Haemi Sanctuarium Internationale Media Art
+					Haemi<br>Sanctuarium<br>Internationale<br>Media Art
 				</div>
 			</div>
 			<div class="col_width">
 				<div class="cap_kor kor">
-					해미국제성지 미디어 아트
+					해미국제성지<br>미디어 아트
 				</div>
 			</div>
 		</div>
@@ -300,6 +306,7 @@
 		</script>
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/20.0.0/tween.umd.js"></script>		
 		<script type="module" src="./src/script.js"></script>
+		<script src="./script2.js"></script>
 		<script id="quadVert" type="x-shader/x-vertex">
 			precision highp float;
 

@@ -99,7 +99,6 @@ let onAR = false;
 
 const alphaTex = new THREE.TextureLoader().load( "./src/img/flower_alpha.png" );
 
-
 init();
 
 function init() {
@@ -948,13 +947,13 @@ function createButton( renderer, sessionInit = {} ) {
             howToTextKR.className = 'h2_kor';
             howToTextKR.className = 'kor';
             howToTextKR.style = 'margin-bottom: 25px; line-height: 1.5;';
-            howToTextKR.innerHTML = '카메라를 통해 바닥을 바라보면 하얀 꽃이 나타납니다. 오른쪽 아래의 버튼을 누르면 하얀 꽃의 위치에 맞게 야생화의 위치가 변경됩니다. 가끔 야생화가 사라지면 버튼을 눌러주세요.<br><br>✿';
+            howToTextKR.innerHTML = '원형 바닥 스크린 중앙에 하얀 꽃을 두고 오른쪽 아래 버튼을 눌러보세요!<br><br>버튼을 누르면 하얀 꽃의 위치에 맞게 야생화의 생성 위치가 변경됩니다.<br>가끔 야생화가 사라지면 버튼을 눌러주세요.<br><br>✿';
 
             const howToTextEng = document.createElement('div');
             howToTextEng.className = 'h2_eng';
             howToTextEng.className = 'eng';
             howToTextKR.style = 'line-height: 1.5;';
-            howToTextEng.innerHTML = 'When you look at the floor through the camera, a white flower will appear.<br>If you tab the button at the bottom right, the position of the wildflowers will adjust to match the position of the white flower. If the wildflowers disappear occasionally, please tab the button.';
+            howToTextEng.innerHTML = 'Place the white flower at the center of the circular floor screen and tab the button at the bottom right!<br><br>When you tab the button, the position where the wildflowers appear will adjust to match the position of the white flower. If the wildflowers disappear occasionally, please tab the button.';
 
             const close = document.createElement('div');
             close.className = 'close';
