@@ -95,7 +95,6 @@
 
 			.eng {
 				color: white;
-				opacity: 0.66;
 				font-family: "Libre Franklin", sans-serif;
 				text-align: center;
 			}
@@ -117,7 +116,7 @@
 			}
 
 			.h2_eng {
-				font-size: 16px;
+				font-size: 17px;
 				font-weight: 500;
 				line-height: 1.4;
 			}
@@ -130,8 +129,21 @@
 			}
 
 			.h3_eng {
-				font-size: 14px;
+				font-size: 15px;
 				font-weight: 400;
+				line-height: 1.4;
+			}
+
+			.h4_kor {
+				font-size: 13px;
+				font-weight: 400;
+				margin-top: 12px;
+			}
+
+			.h4_eng {
+				font-size: 13px;
+				font-weight: 300;
+				margin-top: 12px;
 				line-height: 1.4;
 			}
 
@@ -145,6 +157,21 @@
 				font-size: 12px;
 				text-align: left;
 				width: 105px;
+			}
+
+			#translate {
+				position: absolute;
+				color: white;
+				font-size: 15px;
+				top: 23px;
+				right: 20px;
+				width: 32px;
+				height: 32px;
+				border: 1px white solid;
+				text-align: center;
+				border-radius: 50%;
+				line-height: 0.66;
+				font-weight: 200;
 			}
 
 			.title_text {
@@ -234,10 +261,10 @@
 		<!-- <div id="howToAR">
 			<div class="howToText">
 				<div class="h2_kor kor" style="margin-bottom: 25px; line-height: 1.5;">
-					원형 바닥 스크린 중앙에 하얀 꽃을 두고 오른쪽 아래 버튼을 눌러보세요!<br><br>버튼을 누르면 하얀 꽃의 위치에 맞게 야생화의 생성 위치가 변경됩니다.<br>가끔 야생화가 사라지면 버튼을 눌러주세요.<br><br>✿
+					원형 바닥 스크린 중앙에 하얀 꽃을 두고 오른쪽 아래 버튼을 눌러보세요!<br><br>✿<br><br>버튼을 누르면 하얀 꽃의 위치에 맞게 야생화의 생성 위치가 변경됩니다.<br>가끔 야생화가 사라지면 버튼을 눌러주세요.
 				</div>
 				<div class="h2_eng eng" style="line-height: 1.5;">
-					Place the white flower at the center of the circular floor screen and tab the button at the bottom right!<br><br>When you tab the button, the position where the wildflowers appear will adjust to match the position of the white flower. If the wildflowers disappear occasionally, please tab the button.
+					Place the white flower at the center of the circular floor screen and tab the button at the bottom right!<br><br>✿<br><br>When you tab the button, the position where the wildflowers appear will adjust to match the position of the white flower. If the wildflowers disappear occasionally, please tab the button.
 				</div>
 				<div class="close"></div>
 			</div>
@@ -248,52 +275,47 @@
 		<div id="forClose"></div>
 		<div id="forCanvas"></div>
 		<div id="text" style="display: block;">
-		<div class="title_text preventTouch">
-			<div class="row">
-				<div class="h1_kor kor">
-					야생화
+			<div id="translate" class="kor">
+				<br>EN
+			</div>
+			<div class="title_text preventTouch">
+				<div class="row">
+					<div class="h1_kor kor">
+						야생화
+					</div>
+					<div class="h1_eng eng" style="opacity: 0.66;">
+						Wild Flower
+					</div>
 				</div>
-				<div class="h1_eng eng">
-					Wild Flower
+				<div class="row">
+					<div id="h2" class="h2_kor kor">
+						밝게 피어나는 야생화를 보며 안식의 시간을 느껴보세요.
+					</div>
+				</div>
+				<div id="forButton">
+					<div class="blur"></div>
+				</div>
+				<div class="row">
+					<div id="h3" class="h3_kor kor">
+						증강현실은 원형 바닥 스크린 안에서<br>더욱 최적하게 관람할 수 있습니다.
+						<br>
+					</div>
+					<div id="h4" class="h4_kor kor">모바일 Chrome 및 Android에서 관람 가능</div>
 				</div>
 			</div>
-			<div class="row">
-				<div class="h2_kor kor">
-					밝게 피어나는 야생화를 보며 안식의 시간을 느껴보세요.
-				</div>
-				<div class="h2_eng eng">
-					Take a moment to feel the tranquility of the blooming wildflowers.
-				</div>
-			</div>
-			<div id="forButton">
-				<div class="blur"></div>
-			</div>
-			<div class="row">
-				<div class="h3_kor kor">
-					증강현실은 원형 바닥 스크린 위에서<br>더욱 최적하게 관람할 수 있습니다.
-					<br>
-				</div>
-				<div class="h3_eng eng">
-					For a better AR experience,<br>Please move onto the floor screen.
-					<br>
-				</div>
-				<span class="kor">지원되는 기기 확인</span>
-				<span class="eng">Check supported devices</span>
-			</div>
-		</div>
 
-		<div class="col preventTouch">
-			<div class="col_width">
-				<div class="cap_eng eng">
-					Haemi<br>Sanctuarium<br>Internationale<br>Media Art
+			<div class="col preventTouch">
+				<div class="col_width">
+					<div class="cap_eng eng">
+						Haemi<br>Sanctuarium<br>Internationale<br>Media Art
+					</div>
+				</div>
+				<div class="col_width">
+					<div class="cap_kor kor">
+						해미국제성지<br>미디어 아트
+					</div>
 				</div>
 			</div>
-			<div class="col_width">
-				<div class="cap_kor kor">
-					해미국제성지<br>미디어 아트
-				</div>
-			</div>
-		</div>
 		</div>
 		<!-- <script type="importmap">
 			{

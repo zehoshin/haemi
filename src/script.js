@@ -99,6 +99,9 @@ let onAR = false;
 
 const alphaTex = new THREE.TextureLoader().load( "./src/img/flower_alpha.png" );
 
+//UI
+let isEnglish = false;
+
 init();
 
 function init() {
@@ -903,6 +906,48 @@ renderer.xr.addEventListener( 'sessionend', function ( event ) {
     console.log('offAR')
 } );
 
+//UI
+
+document.getElementById('translate').addEventListener('click', function() {
+    const h2 = document.getElementById('h2');
+    const h3 = document.getElementById('h3');
+    const h4 = document.getElementById('h4');
+
+    if (!isEnglish) {
+        document.getElementById('translate').innerHTML = '<br>KR';
+
+        h2.classList.remove('h2_kor', 'kor');
+        h2.classList.add('h2_eng', 'eng');
+        h2.innerHTML = 'Take a moment to feel the tranquility of the blooming wildflowers.';
+
+        h3.classList.remove('h3_kor', 'kor');
+        h3.classList.add('h3_eng', 'eng');
+        h3.innerHTML = 'For a better AR experience,<br>Please move onto the floor screen.';
+
+        h4.classList.remove('h4_kor', 'kor');
+        h4.classList.add('h4_eng', 'eng');
+        h4.innerHTML = 'AR is only available on<br>mobile Chrome and Android.';
+
+        isEnglish = true;
+    } else {
+        document.getElementById('translate').innerHTML = '<br>EN';
+
+        h2.classList.remove('h2_eng', 'eng');
+        h2.classList.add('h2_kor', 'kor');
+        h2.innerHTML = '밝게 피어나는 야생화를 보며 안식의 시간을 느껴보세요.';
+
+        h3.classList.remove('h3_eng', 'eng');
+        h3.classList.add('h3_kor', 'kor');
+        h3.innerHTML = '증강현실은 원형 바닥 스크린 안에서<br>더욱 최적하게 관람할 수 있습니다.';
+
+        h4.classList.remove('h4_eng', 'eng');
+        h4.classList.add('h4_kor', 'kor');
+        h4.innerHTML = '모바일 Chrome 및 Android에서 관람 가능';
+
+        isEnglish = false;
+    }
+});
+
 function createButton( renderer, sessionInit = {} ) {
 
     const button = document.createElement( 'button' );
@@ -959,8 +1004,13 @@ function createButton( renderer, sessionInit = {} ) {
             close.className = 'close';
 
             howToAR.appendChild(howToText);
-            howToText.appendChild(howToTextKR);
-            howToText.appendChild(howToTextEng);
+            
+            if (!isEnglish) {
+                howToText.appendChild(howToTextKR);
+            } else {
+                howToText.appendChild(howToTextEng);
+            }
+
             howToText.appendChild(close);
 
             overlay.appendChild(howToAR);
