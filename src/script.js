@@ -101,6 +101,7 @@ const alphaTex = new THREE.TextureLoader().load( "./src/img/flower_alpha.png" );
 
 //UI
 let isEnglish = false;
+let howToTextKR, howToTextEN;
 
 init();
 
@@ -927,6 +928,9 @@ document.getElementById('translate').addEventListener('click', function() {
         h4.classList.remove('h4_kor', 'kor');
         h4.classList.add('h4_eng', 'eng');
         h4.innerHTML = 'AR is only available on<br>mobile Chrome and Android.';
+        
+        howToTextKR.style.display = 'none';
+        howToTextEN.style.display = 'block';
 
         isEnglish = true;
     } else {
@@ -943,6 +947,9 @@ document.getElementById('translate').addEventListener('click', function() {
         h4.classList.remove('h4_eng', 'eng');
         h4.classList.add('h4_kor', 'kor');
         h4.innerHTML = '모바일 Chrome 및 Android에서 관람 가능';
+
+        howToTextKR.style.display = 'block';
+        howToTextEN.style.display = 'none';
 
         isEnglish = false;
     }
@@ -988,28 +995,25 @@ function createButton( renderer, sessionInit = {} ) {
             const howToText = document.createElement('div');
             howToText.className = 'howToText';
 
-            const howToTextKR = document.createElement('div');
+            howToTextKR = document.createElement('div');
             howToTextKR.className = 'h2_kor';
             howToTextKR.className = 'kor';
             howToTextKR.style = 'margin-bottom: 25px; line-height: 1.5;';
-            howToTextKR.innerHTML = '원형 바닥 스크린 중앙에 하얀 꽃을 두고 오른쪽 아래 버튼을 눌러보세요!<br><br>버튼을 누르면 하얀 꽃의 위치에 맞게 야생화의 생성 위치가 변경됩니다.<br>가끔 야생화가 사라지면 버튼을 눌러주세요.<br><br>✿';
+            howToTextKR.innerHTML = '원형 바닥 스크린 중앙에 하얀 꽃을 두고 오른쪽 아래 버튼을 눌러보세요!<br><br>✿<br><br>버튼을 누르면 하얀 꽃의 위치에 맞게 야생화의 생성 위치가 변경됩니다.<br>가끔 야생화가 사라지면 버튼을 눌러주세요.';
 
-            const howToTextEng = document.createElement('div');
-            howToTextEng.className = 'h2_eng';
-            howToTextEng.className = 'eng';
+            howToTextEN = document.createElement('div');
+            howToTextEN.className = 'h2_eng';
+            howToTextEN.className = 'eng';
             howToTextKR.style = 'line-height: 1.5;';
-            howToTextEng.innerHTML = 'Place the white flower at the center of the circular floor screen and tab the button at the bottom right!<br><br>When you tab the button, the position where the wildflowers appear will adjust to match the position of the white flower. If the wildflowers disappear occasionally, please tab the button.';
+            howToTextEN.innerHTML = 'Place the white flower at the center of the circular floor screen and tab the button at the bottom right!<br><br>✿<br><br>When you tab the button, the position where the wildflowers appear will adjust to match the position of the white flower. If the wildflowers disappear occasionally, please tab the button.';
 
             const close = document.createElement('div');
             close.className = 'close';
 
             howToAR.appendChild(howToText);
             
-            if (!isEnglish) {
-                howToText.appendChild(howToTextKR);
-            } else {
-                howToText.appendChild(howToTextEng);
-            }
+            howToText.appendChild(howToTextKR);
+            howToText.appendChild(howToTextEN);
 
             howToText.appendChild(close);
 
