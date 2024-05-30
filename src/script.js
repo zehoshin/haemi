@@ -929,8 +929,10 @@ document.getElementById('translate').addEventListener('click', function() {
         h4.classList.add('h4_eng', 'eng');
         h4.innerHTML = 'AR is only available on<br>mobile Chrome and Android.';
         
-        howToTextKR.style.display = 'none';
-        howToTextEN.style.display = 'block';
+        if (howToTextKR && howToTextEN) {
+            howToTextKR.style.display = 'none';
+            howToTextEN.style.display = 'block';
+        }
 
         isEnglish = true;
     } else {
@@ -948,8 +950,10 @@ document.getElementById('translate').addEventListener('click', function() {
         h4.classList.add('h4_kor', 'kor');
         h4.innerHTML = '모바일 Chrome 및 Android에서 관람 가능';
 
-        howToTextKR.style.display = 'block';
-        howToTextEN.style.display = 'none';
+        if (howToTextKR && howToTextEN) {
+            howToTextKR.style.display = 'block';
+            howToTextEN.style.display = 'none';
+        }
 
         isEnglish = false;
     }
@@ -1004,7 +1008,7 @@ function createButton( renderer, sessionInit = {} ) {
             howToTextEN = document.createElement('div');
             howToTextEN.className = 'h2_eng';
             howToTextEN.className = 'eng';
-            howToTextKR.style = 'line-height: 1.5;';
+            howToTextKR.style = 'line-height: 3.0;';
             howToTextEN.innerHTML = 'Place the white flower at the center of the circular floor screen and tab the button at the bottom right!<br><br>✿<br><br>When you tab the button, the position where the wildflowers appear will adjust to match the position of the white flower. If the wildflowers disappear occasionally, please tab the button.';
 
             const close = document.createElement('div');
