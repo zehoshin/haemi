@@ -1008,6 +1008,7 @@ function createButton( renderer, sessionInit = {} ) {
             howToTextEN = document.createElement('div');
             howToTextEN.className = 'h2_eng';
             howToTextEN.className = 'eng';
+            howToTextEN.style.display = 'none';
             howToTextEN.style.lineHeight = '1.5';
             howToTextEN.innerHTML = 'Place the white flower at the center of the circular floor screen and tab the button at the bottom right!<br><br>✿<br><br>When you tab the button, the position where the wildflowers appear will adjust to match the position of the white flower. If the wildflowers disappear occasionally, please tab the button.';
 
