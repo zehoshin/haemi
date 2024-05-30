@@ -1002,13 +1002,13 @@ function createButton( renderer, sessionInit = {} ) {
             howToTextKR = document.createElement('div');
             howToTextKR.className = 'h2_kor';
             howToTextKR.className = 'kor';
-            howToTextKR.style = 'margin-bottom: 25px; line-height: 1.5;';
+            howToTextKR.style.lineHeight = '1.5';
             howToTextKR.innerHTML = '원형 바닥 스크린 중앙에 하얀 꽃을 두고 오른쪽 아래 버튼을 눌러보세요!<br><br>✿<br><br>버튼을 누르면 하얀 꽃의 위치에 맞게 야생화의 생성 위치가 변경됩니다.<br>가끔 야생화가 사라지면 버튼을 눌러주세요.';
 
             howToTextEN = document.createElement('div');
             howToTextEN.className = 'h2_eng';
             howToTextEN.className = 'eng';
-            howToTextKR.style = 'line-height: 3.0;';
+            howToTextEN.style.lineHeight = '1.5';
             howToTextEN.innerHTML = 'Place the white flower at the center of the circular floor screen and tab the button at the bottom right!<br><br>✿<br><br>When you tab the button, the position where the wildflowers appear will adjust to match the position of the white flower. If the wildflowers disappear occasionally, please tab the button.';
 
             const close = document.createElement('div');
